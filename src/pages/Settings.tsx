@@ -40,7 +40,7 @@ function CardStyleChoice() {
   const v = cardStylePref.use();
   return (
     <div className="grid grid-cols-2 gap-2 p-3">
-      {[{ id: "spotify", l: "Spotify cards" }, { id: "routenet", l: "Routenet cards" }].map((o) => (
+      {[{ id: "spotify", l: "Spotify cards" }, { id: "classic", l: "Routenet cards" }].map((o) => (
         <button key={o.id} onClick={() => { cardStylePref.set(o.id); applyCardStyle(o.id); }}
           className={cn("rounded-lg px-3 py-2.5 text-sm font-bold transition-colors", v === o.id ? "bg-primary text-primary-foreground" : "bg-secondary text-foreground")}>
           {o.l}
