@@ -12,3 +12,7 @@
 - [x] Random per-song background (cover / looped YouTube clip / free ambient loop), untappable
 - [x] Desktop side panel hide-queue button that shows the background instead
 - [x] Desktop player: tilted artwork left, rolling lyrics right, double-tap toggles sync
+- [x] Video: song video -> fan made -> both artists -> Vevo -> random artist pool (last resort)
+- [x] Artwork by default, "Switch to video" on phone and desktop with smooth slide
+- [x] Smarter lyrics finder (strips instrumental/edit tags) + song-story fallback
+- [x] Phone player spacing, always-visible volume, fuller 3-dots menu

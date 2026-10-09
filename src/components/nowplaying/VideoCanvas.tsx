@@ -57,6 +57,55 @@ async function pickArtistVideo(artist: string): Promise<string> {
   return id;
 }
 
+function cleanTitle(title: string): string {
+  return title
+    .replace(/\s*[([][^)\]]*[)\]]/g, "")
+    .replace(/\s*(?:feat\.?|ft\.?|featuring)\s.*$/i, "")
+    .replace(/\s+-\s+.*$/, "")
+    .trim() || title;
+}
+
+const songCache = new Map<string, string>();
+/** First real (non-static) video matching the song and an artist name. */
+async function firstMatch(query: string, songWords: string[], firsts: string[]): Promise<string> {
+  const res = (await searchYouTubeVideos(query, 10).catch(() => [])) as any[];
+  for (const v of res) {
+    const t = `${v.title || v.snippet?.title || ""} ${v.channelTitle || v.uploader || v.snippet?.channelTitle || ""}`.toLowerCase();
+    if (STATIC_RE.test(t)) continue;
+    if (songWords.length && !songWords.some((w) => t.includes(w))) continue;
+    if (!firsts.some((f) => t.includes(f))) continue;
+    const id = idOf(v);
+    if (id) return id;
+  }
+  return "";
+}
+
+/**
+ * Video cascade: song music video -> fan-made video -> both artists' video ->
+ * artist Vevo video -> random video from the artist's pool (last resort).
+ */
+async function pickVideo(title: string, artist: string): Promise<string> {
+  const names = splitArtists(artist);
+  if (!names.length) return "";
+  const song = cleanTitle(title);
+  const key = `${song}|${artist}`.toLowerCase();
+  if (songCache.has(key)) return songCache.get(key)!;
+  const firsts = names.map((n) => n.toLowerCase().split(" ")[0]);
+  const words = song.toLowerCase().split(/\s+/).filter((w) => w.length > 2).slice(0, 3);
+  const steps: Array<[string, string[]]> = [];
+  if (song) {
+    steps.push([`${song} ${names[0]} music video`, words]);
+    steps.push([`${song} ${names[0]} fan made video`, words]);
+  }
+  if (names.length > 1) steps.push([`${names.join(" ")} music video`, []]);
+  steps.push([`${names[0]} vevo music video`, []]);
+  for (const [q, w] of steps) {
+    const id = await firstMatch(q, w, firsts);
+    if (id) { songCache.set(key, id); return id; }
+  }
+  return pickArtistVideo(artist);
+}
+
 interface Props {
   trackId: string;
   artwork: string;
@@ -68,7 +117,7 @@ interface Props {
   onActiveChange?: (active: boolean) => void;
 }
 
-export function VideoCanvas({ trackId, artwork, artist = "", enabled = true, className, onActiveChange }: Props) {
+export function VideoCanvas({ trackId, artwork, artist = "", title = "", enabled = true, className, onActiveChange }: Props) {
   const [id, setId] = useState("");
 
   // Always use the artist's official music videos — never the audio stream ID,
@@ -77,10 +126,10 @@ export function VideoCanvas({ trackId, artwork, artist = "", enabled = true, cla
     let cancelled = false;
     setId("");
     if (artist && enabled) {
-      pickArtistVideo(artist).then((v) => { if (!cancelled) setId(v); });
+      pickVideo(title, artist).then((v) => { if (!cancelled) setId(v); });
     }
     return () => { cancelled = true; };
-  }, [trackId, artist, enabled]);
+  }, [trackId, artist, title, enabled]);
 
   const active = enabled && !!id;
   // Hide the frame until YouTube's own start-up buttons have gone away.
@@ -97,7 +146,7 @@ export function VideoCanvas({ trackId, artwork, artist = "", enabled = true, cla
           tabIndex={-1}
           src={`https://www.youtube-nocookie.com/embed/${id}?autoplay=1&mute=1&controls=0&loop=1&playlist=${id}&modestbranding=1&playsinline=1&rel=0&iv_load_policy=3&disablekb=1&fs=0&start=30`}
           allow="autoplay; encrypted-media"
-          className={cn("pointer-events-none absolute left-1/2 top-1/2 h-[180%] w-[320%] -translate-x-1/2 -translate-y-1/2 transition-opacity duration-1000 sm:w-[180%] lg:h-[140%] lg:w-[140%]", ready ? "opacity-100" : "opacity-0")}
+          className={cn("pointer-events-none absolute left-1/2 top-1/2 h-[max(118%,62.5vw)] w-[max(118%,210vh)] -translate-x-1/2 -translate-y-1/2 transition-opacity duration-1000", ready ? "opacity-100" : "opacity-0")}
         />
       ) : artwork ? (
         <img src={artwork} alt="" className="h-full w-full scale-110 object-cover blur-2xl opacity-60" />

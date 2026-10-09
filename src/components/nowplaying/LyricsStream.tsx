@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Loader2, Music2 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { fetchLyrics } from "@/services/lyricsLookup";
 import { cn } from "@/lib/utils";
 
 interface LyricLine { time: number; text: string }
@@ -18,8 +18,21 @@ export function parseSyncedLyrics(synced: string): LyricLine[] {
   return lines;
 }
 
-export function LyricsStream({ title, artist, currentTime, className, onSeek }: {
-  title: string; artist: string; currentTime: number; className?: string; onSeek?: (t: number) => void;
+/** Song-story lines shown when a song has no lyrics; they glide up and back down like synced lyrics. */
+function storyLines(title: string, artist: string, album?: string): string[] {
+  return [
+    title,
+    `by ${artist}`,
+    album ? `From the album ${album}` : "Single release",
+    "No lyrics found for this one",
+    "Just feel the music",
+    `Turn it up for ${artist.split(/,|&| feat| ft/i)[0].trim()}`,
+    "Lyrics may land here soon",
+  ].filter(Boolean);
+}
+
+export function LyricsStream({ title, artist, album, currentTime, className, onSeek }: {
+  title: string; artist: string; album?: string; currentTime: number; className?: string; onSeek?: (t: number) => void;
 }) {
   const activeRef = useRef<HTMLParagraphElement>(null);
   const [synced, setSynced] = useState(true);
@@ -27,23 +40,27 @@ export function LyricsStream({ title, artist, currentTime, className, onSeek }: 
 
   const { data, isLoading } = useQuery({
     queryKey: ["lyrics", title, artist],
-    queryFn: async () => {
-      const { data, error } = await supabase.functions.invoke("lyrics", { body: { title, artist } });
-      if (error) throw error;
-      return data as { lyrics: string | null; syncedLyrics?: string | null };
-    },
+    queryFn: () => fetchLyrics(title, artist),
     enabled: !!title && !!artist,
     staleTime: 30 * 60 * 1000,
   });
 
   const lines = useMemo(() => (data?.syncedLyrics ? parseSyncedLyrics(data.syncedLyrics) : null), [data?.syncedLyrics]);
   const hasSynced = !!lines && lines.length > 0;
+  const plain = (data?.lyrics || "").split("\n").filter((l) => l.trim());
+  const isStory = !isLoading && !hasSynced && plain.length === 0;
+  const story = useMemo(() => storyLines(title, artist, album), [title, artist, album]);
   const activeIndex = useMemo(() => {
+    if (isStory) {
+      // Ping-pong through the story every 5s: down, then back up.
+      const n = story.length, cycle = Math.max(1, 2 * n - 2), step = Math.floor(currentTime / 5) % cycle;
+      return step < n ? step : cycle - step;
+    }
     if (!lines) return -1;
     let idx = -1;
     for (let i = 0; i < lines.length; i++) { if (lines[i].time <= currentTime) idx = i; else break; }
     return idx;
-  }, [lines, currentTime]);
+  }, [lines, currentTime, isStory, story]);
 
   useEffect(() => {
     if (synced && activeRef.current) activeRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -57,7 +74,8 @@ export function LyricsStream({ title, artist, currentTime, className, onSeek }: 
     window.setTimeout(() => setFlash(null), 1200);
   };
 
-  const display = hasSynced ? lines! : (data?.lyrics || "").split("\n").filter((l) => l.trim()).map((text, i) => ({ time: i, text }));
+  const display = hasSynced ? lines! : isStory ? story.map((text, i) => ({ time: i, text })) : plain.map((text, i) => ({ time: i, text }));
+  const highlight = hasSynced || isStory;
 
   return (
     <div onDoubleClick={toggleSync} className={cn("relative h-full min-h-0 select-none", className)}>
@@ -66,13 +84,11 @@ export function LyricsStream({ title, artist, currentTime, className, onSeek }: 
       )}
       <div className="custom-scrollbar h-full overflow-y-auto pr-4 [mask-image:linear-gradient(to_bottom,transparent,black_15%,black_85%,transparent)]">
         {isLoading && <div className="flex h-full items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>}
-        {!isLoading && display.length === 0 && (
-          <div className="flex h-full flex-col items-center justify-center gap-3 text-muted-foreground"><Music2 className="h-10 w-10" /><p className="text-sm">No lyrics available.</p></div>
-        )}
+        {isStory && <p className="sticky top-0 flex items-center gap-2 pt-2 text-xs font-semibold uppercase tracking-widest text-muted-foreground"><Music2 className="h-4 w-4" /> Song story</p>}
         <div className="space-y-5 py-[30vh]">
           {display.map((line, i) => {
-            const isActive = hasSynced && i === activeIndex;
-            const isPast = hasSynced && i < activeIndex;
+            const isActive = highlight && i === activeIndex;
+            const isPast = highlight && i < activeIndex;
             return (
               <p
                 key={i}
