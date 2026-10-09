@@ -29,7 +29,8 @@ export function DesktopSidebar() {
   }, [location.pathname]);
 
   return (
-    <aside className="custom-scrollbar hidden h-full min-h-0 w-[260px] shrink-0 flex-col overflow-y-auto bg-sidebar lg:flex xl:w-[280px]">
+    <aside className="hidden h-full min-h-0 w-[280px] shrink-0 flex-col gap-2 lg:flex xl:w-[320px]">
+      <div className="shrink-0 rounded-lg bg-background-elevated pb-2">
       <div className="flex h-14 items-center gap-3 px-4">
         <AppLogo className="h-8 w-8 rounded-md" />
         <span className="text-lg font-black text-sidebar-foreground">routenet</span>
@@ -41,24 +42,30 @@ export function DesktopSidebar() {
             key={path}
             to={path}
             className={cn(
-              "flex h-10 items-center gap-3 rounded-md px-3 text-sm font-semibold transition-colors",
+              "flex h-11 items-center gap-4 rounded-md px-3 text-[15px] font-bold transition-colors",
               location.pathname === path
-                ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                ? "text-foreground"
                 : "text-muted-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-foreground",
             )}
           >
-            <Icon className="h-[18px] w-[18px]" />
+            <Icon className="h-6 w-6" />
             {label}
           </NavLink>
         ))}
       </nav>
+      </div>
 
-      <div className="mx-2 mt-2 min-h-0 flex-1 rounded-md bg-background-elevated px-2 pb-6 pt-3">
+      <div className="custom-scrollbar min-h-0 flex-1 overflow-y-auto rounded-lg bg-background-elevated px-2 pb-6 pt-3">
         <div className="mb-2 flex items-center justify-between px-2">
-          <span className="flex items-center gap-2 text-sm font-bold text-foreground"><Library className="h-4 w-4" /> Your Library</span>
+          <span className="flex items-center gap-3 text-[15px] font-bold text-muted-foreground hover:text-foreground"><Library className="h-6 w-6" /> Your Library</span>
           <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => navigate("/create-playlist")} aria-label="Create playlist">
             <Plus className="h-4 w-4" />
           </Button>
+        </div>
+        <div className="mb-3 flex gap-2 px-2">
+          {[{ l: "Playlists", p: "/library" }, { l: "Liked", p: "/liked" }, { l: "Recent", p: "/recently-played" }].map((c) => (
+            <button key={c.l} onClick={() => navigate(c.p)} className="rounded-full bg-secondary px-3 py-1 text-[13px] font-semibold text-foreground transition-colors hover:bg-secondary/70">{c.l}</button>
+          ))}
         </div>
         {[
           { path: "/library", label: "Library", icon: Library },
@@ -81,12 +88,12 @@ export function DesktopSidebar() {
                 className="flex w-full items-center gap-3 rounded-md px-2 py-1.5 text-left transition-colors hover:bg-sidebar-accent/60"
               >
                 {p.cover_image
-                  ? <img src={p.cover_image} alt="" className="h-9 w-9 shrink-0 rounded object-cover" />
+                  ? <img src={p.cover_image} alt="" className="h-12 w-12 shrink-0 rounded object-cover" />
 
-                  : <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded bg-secondary"><Music2 className="h-4 w-4 text-muted-foreground" /></span>}
+                  : <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded bg-secondary"><Music2 className="h-4 w-4 text-muted-foreground" /></span>}
                 <span className="min-w-0">
-                  <span className="block truncate text-[13px] font-semibold text-sidebar-foreground">{p.name}</span>
-                  <span className="block text-[11px] text-muted-foreground">Playlist</span>
+                  <span className="block truncate text-[15px] font-semibold text-sidebar-foreground">{p.name}</span>
+                  <span className="block text-[13px] text-muted-foreground">Playlist</span>
                 </span>
               </button>
             ))}
@@ -102,10 +109,10 @@ export function DesktopSidebar() {
                 onClick={() => navigate("/liked")}
                 className="flex w-full items-center gap-3 rounded-md px-2 py-1.5 text-left transition-colors hover:bg-sidebar-accent/60"
               >
-                <img src={track.artwork || "/placeholder.svg"} alt="" className="h-9 w-9 shrink-0 rounded object-cover" />
+                <img src={track.artwork || "/placeholder.svg"} alt="" className="h-12 w-12 shrink-0 rounded object-cover" />
                 <span className="min-w-0">
-                  <span className="block truncate text-[13px] font-semibold text-sidebar-foreground">{track.title}</span>
-                  <span className="block truncate text-[11px] text-muted-foreground">{track.artist}</span>
+                  <span className="block truncate text-[15px] font-semibold text-sidebar-foreground">{track.title}</span>
+                  <span className="block truncate text-[13px] text-muted-foreground">{track.artist}</span>
                 </span>
               </button>
             ))}

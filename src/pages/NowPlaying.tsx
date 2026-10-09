@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowDownCircle, ChevronDown, Heart, Loader2, ListMusic, MessageSquareQuote, Mic2, MoreHorizontal, Pause, Play, Plus, Repeat, Repeat1, Share2, Shuffle, SkipBack, SkipForward, Volume2 } from "lucide-react";
+import { ArrowDownCircle, CheckCircle2, ChevronDown, MonitorPlay, MonitorSpeaker, PlusCircle, Heart, Loader2, ListMusic, MessageSquareQuote, Mic2, MoreHorizontal, Pause, Play, Plus, Repeat, Repeat1, Share2, Shuffle, SkipBack, SkipForward, Volume2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { AddToPlaylistDialog } from "@/components/AddToPlaylistDialog";
@@ -12,7 +12,9 @@ import { usePlayer } from "@/context/PlayerContext";
 import { cn } from "@/lib/utils";
 import { SyncedVideoPanel } from "@/components/nowplaying/SyncedVideoPanel";
 import { VideoCanvas } from "@/components/nowplaying/VideoCanvas";
-import { LyricsStream } from "@/components/nowplaying/LyricsStream";
+import { LyricsStream, parseSyncedLyrics } from "@/components/nowplaying/LyricsStream";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { lookupMeta, peekMeta, type DeezerMeta } from "@/services/metadataEnrichment";
 
 import { toTitleCase } from "@/utils/toTitleCase";
@@ -190,135 +192,110 @@ export default function NowPlaying() {
         />
       </div>
 
-      {/* Grabber + collapse */}
-      <header className="relative z-10 flex shrink-0 items-center justify-between px-4 pt-[calc(0.5rem+env(safe-area-inset-top))] lg:hidden">
-        <Button variant="ghost" size="icon" onClick={() => navigate(-1)} aria-label="Back" className="rounded-full text-foreground/70 hover:bg-foreground/10">
-          <ChevronDown className="h-5 w-5" />
-        </Button>
-        <span className="h-[5px] w-9 rounded-full bg-foreground/30" />
-        <span className="h-9 w-9" />
+      {/* Phone: Spotify-style — video fills the screen, controls sit at the bottom */}
+      <header className="relative z-10 flex shrink-0 items-center justify-between px-3 pt-[calc(0.5rem+env(safe-area-inset-top))] lg:hidden">
+        <button onClick={() => navigate(-1)} aria-label="Back" className="flex h-10 w-10 items-center justify-center text-foreground">
+          <ChevronDown className="h-6 w-6" />
+        </button>
+        <span className="truncate px-2 text-[13px] font-bold text-foreground">{toTitleCase(display.artist)}</span>
+        <button onClick={() => setShowMore(true)} aria-label="More" className="flex h-10 w-10 items-center justify-center text-foreground">
+          <MoreHorizontal className="h-5 w-5" />
+        </button>
       </header>
 
-      <div className="relative z-10 flex min-h-0 flex-1 flex-col justify-center px-7 lg:hidden">
-        {/* Square artwork */}
-        <motion.div
-          key={currentTrack.id}
-          initial={{ scale: 0.96, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ type: "spring", stiffness: 240, damping: 26 }}
-          className={`mx-auto aspect-square w-full max-w-[min(78vw,44dvh)] overflow-hidden rounded-[10px] shadow-[0_18px_50px_-12px_hsl(0_0%_0%/0.7)] transition-opacity duration-700 ${videoActive ? "invisible opacity-0" : ""}`}
-        >
-          {isResolving ? (
-            <div className="flex h-full w-full items-center justify-center bg-secondary">
-              <Loader2 className="h-7 w-7 animate-spin text-primary" />
-            </div>
-          ) : (
-            <img src={display.artwork} alt={display.title} className="h-full w-full object-cover" />
-          )}
-        </motion.div>
-
-        {/* Title row */}
-        <div className="mt-7 flex items-center gap-3">
-          <div className="min-w-0 flex-1">
-            <h1 className="truncate text-[21px] font-semibold leading-tight text-foreground">{toTitleCase(display.title)}</h1>
-            <button
-              onClick={() => navigate(`/artist/${encodeURIComponent(display.artist)}`)}
-              className="block max-w-full truncate text-[21px] font-normal leading-tight text-foreground/60 transition-colors hover:text-foreground"
+      <div className="relative z-10 flex min-h-0 flex-1 flex-col px-6 lg:hidden">
+        {!videoActive && (
+          <div className="flex flex-1 items-center justify-center py-6">
+            <motion.div
+              key={currentTrack.id}
+              initial={{ scale: 0.96, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              className="aspect-square w-full max-w-[min(80vw,42dvh)] overflow-hidden rounded-md shadow-[0_18px_50px_-12px_hsl(0_0%_0%/0.7)]"
             >
+              {isResolving ? (
+                <div className="flex h-full w-full items-center justify-center bg-secondary"><Loader2 className="h-7 w-7 animate-spin text-primary" /></div>
+              ) : (
+                <img src={display.artwork} alt={display.title} className="h-full w-full object-cover" />
+              )}
+            </motion.div>
+          </div>
+        )}
+        {videoActive && <div className="flex-1" />}
+
+        <PhoneLyricLine title={currentTrack.title} artist={currentTrack.artist} currentTime={currentTime} onOpen={() => navigate("/lyrics")} />
+        {videoId && (
+          <button onClick={() => setShowVideo(true)} className="mb-4 flex w-fit items-center gap-1.5 rounded-md bg-background/50 px-2.5 py-1.5 text-[12px] font-bold text-foreground backdrop-blur-sm">
+            <MonitorPlay className="h-3.5 w-3.5" /> Switch to video
+          </button>
+        )}
+
+        <div className="flex items-center gap-3">
+          <img src={display.artwork} alt="" className="h-12 w-12 shrink-0 rounded object-cover" />
+          <div className="min-w-0 flex-1">
+            <h1 className="truncate text-[20px] font-bold leading-tight text-foreground">{toTitleCase(display.title)}</h1>
+            <button onClick={() => navigate(`/artist/${encodeURIComponent(display.artist)}`)} className="block max-w-full truncate text-[15px] text-foreground/70">
               {toTitleCase(display.artist)}
             </button>
           </div>
-          <div className="flex shrink-0 items-center gap-1.5">
-            <button
-              onClick={handleToggleLike}
-              aria-label="Like"
-              className={cn("flex h-9 w-9 items-center justify-center rounded-full bg-white/5 text-foreground/80 transition-colors hover:bg-white/10", liked && "bg-primary/15 text-primary")}
-            >
-              <Heart className="h-[15px] w-[15px]" fill={liked ? "currentColor" : "none"} />
-            </button>
-            <button
-              onClick={() => setShowMore(true)}
-              aria-label="More"
-              className="flex h-9 w-9 items-center justify-center rounded-full bg-white/5 text-foreground/80 transition-colors hover:bg-white/10"
-            >
-              <MoreHorizontal className="h-[17px] w-[17px]" />
-            </button>
-          </div>
+          <button onClick={handleToggleLike} aria-label="Like" className={cn("flex h-10 w-10 items-center justify-center text-foreground", liked && "text-primary")}>
+            {liked ? <CheckCircle2 className="h-7 w-7" fill="currentColor" stroke="hsl(var(--background))" /> : <PlusCircle className="h-7 w-7" />}
+          </button>
         </div>
 
-        {/* Thin progress bar */}
-        <div className="mt-5">
+        <div className="mt-4">
           <Slider
             value={[localProgress * 100]}
             max={100}
             step={0.05}
             aria-label="Seek"
             onValueChange={([value]) => handleSeek(value / 100)}
-            className="py-1 [&_[role=slider]]:h-2.5 [&_[role=slider]]:w-2.5 [&_[role=slider]]:border-0 [&>span]:h-[4px]"
+            className="py-1 [&_[role=slider]]:h-3 [&_[role=slider]]:w-3 [&_[role=slider]]:border-0 [&_[role=slider]]:bg-foreground [&>span]:h-[3px]"
           />
-          <div className="mt-1 flex items-center justify-between text-[11px] tabular-nums text-foreground/45">
-            <span aria-label="Elapsed time">{formatTime(currentTime)}</span>
-            <span aria-label="Remaining time">-{formatTime(Math.max(0, actualDuration - currentTime))}</span>
+          <div className="mt-1 flex items-center justify-between text-[11px] tabular-nums text-foreground/60">
+            <span>{formatTime(currentTime)}</span>
+            <span>-{formatTime(Math.max(0, actualDuration - currentTime))}</span>
           </div>
         </div>
 
-        {/* Transport */}
-        <div className="mt-6 flex items-center justify-center gap-8">
-          <button onClick={previous} aria-label="Previous track" className="flex h-12 w-12 items-center justify-center rounded-full bg-white/5 text-foreground transition-transform hover:bg-white/10 active:scale-[0.97]">
-            <SkipBack className="h-[26px] w-[26px]" fill="currentColor" />
+        <div className="mt-3 flex items-center justify-between">
+          <button onClick={toggleShuffle} aria-pressed={shuffle} aria-label="Shuffle" className={cn("text-foreground", shuffle && "text-primary")}>
+            <Shuffle className="h-6 w-6" />
+          </button>
+          <button onClick={previous} aria-label="Previous track" className="text-foreground active:scale-95">
+            <SkipBack className="h-8 w-8" fill="currentColor" />
           </button>
           <button
             onClick={togglePlay}
             disabled={isResolving}
             aria-label={isPlaying ? "Pause" : "Play"}
-            className="flex h-16 w-16 items-center justify-center rounded-full bg-primary text-black shadow-[0_16px_42px_rgba(29,185,84,0.35)] transition-transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-60"
+            className="flex h-16 w-16 items-center justify-center rounded-full bg-foreground text-background active:scale-95 disabled:opacity-60"
           >
-            {isResolving ? <Loader2 className="h-[32px] w-[32px] animate-spin" /> : isPlaying ? <Pause className="h-[30px] w-[30px]" fill="currentColor" /> : <Play className="ml-1 h-[30px] w-[30px]" fill="currentColor" />}
+            {isResolving ? <Loader2 className="h-7 w-7 animate-spin" /> : isPlaying ? <Pause className="h-7 w-7" fill="currentColor" /> : <Play className="ml-1 h-7 w-7" fill="currentColor" />}
           </button>
-          <button onClick={next} aria-label="Next track" className="flex h-12 w-12 items-center justify-center rounded-full bg-white/5 text-foreground transition-transform hover:bg-white/10 active:scale-[0.97]">
-            <SkipForward className="h-[26px] w-[26px]" fill="currentColor" />
+          <button onClick={next} aria-label="Next track" className="text-foreground active:scale-95">
+            <SkipForward className="h-8 w-8" fill="currentColor" />
+          </button>
+          <button onClick={toggleRepeat} aria-label={`Repeat: ${repeat}`} className={cn("text-foreground", repeat !== "off" && "text-primary")}>
+            {repeat === "one" ? <Repeat1 className="h-6 w-6" /> : <Repeat className="h-6 w-6" />}
           </button>
         </div>
 
         {showVolume && (
-          <div className="mt-6 rounded-2xl border border-white/10 bg-black/20 p-3 backdrop-blur-sm">
-            <div className="flex items-center gap-3">
-              <Volume2 className="h-4 w-4 shrink-0 text-foreground/60" />
-              <Slider
-                value={[volume * 100]}
-                max={100}
-                step={1}
-                aria-label="Volume"
-                onValueChange={([value]) => { setVolume(value / 100); setGlobalVolume(value / 100); }}
-                className="flex-1 [&_[role=slider]]:h-2.5 [&_[role=slider]]:w-2.5 [&_[role=slider]]:border-0 [&>span]:h-[4px]"
-              />
-            </div>
+          <div className="mt-4 flex items-center gap-3">
+            <Volume2 className="h-4 w-4 shrink-0 text-foreground/60" />
+            <Slider value={[volume * 100]} max={100} step={1} aria-label="Volume" onValueChange={([value]) => { setVolume(value / 100); setGlobalVolume(value / 100); }} className="flex-1 [&_[role=slider]]:h-2.5 [&_[role=slider]]:w-2.5 [&_[role=slider]]:border-0 [&>span]:h-[3px]" />
           </div>
         )}
       </div>
 
-      {/* Bottom icon bar */}
-      <section className="relative z-10 shrink-0 px-10 pb-[calc(0.9rem+env(safe-area-inset-bottom))] pt-5 lg:hidden">
-        <div className="flex items-center justify-between">
-          <button onClick={() => navigate("/lyrics")} aria-label="Lyrics" className="text-foreground/70 transition-colors hover:text-foreground">
-            <Mic2 className="h-[22px] w-[22px]" />
-          </button>
-          <button onClick={toggleShuffle} aria-pressed={shuffle} aria-label="Shuffle" className={cn("text-foreground/70 transition-colors hover:text-foreground", shuffle && "text-primary")}>
-            <Shuffle className="h-[21px] w-[21px]" />
-          </button>
-          <button onClick={toggleRepeat} aria-label={`Repeat: ${repeat}`} className={cn("text-foreground/70 transition-colors hover:text-foreground", repeat !== "off" && "text-primary")}>
-            {repeat === "one" ? <Repeat1 className="h-[21px] w-[21px]" /> : <Repeat className="h-[21px] w-[21px]" />}
-          </button>
-          <button onClick={() => setShowVolume((prev) => !prev)} aria-label="Volume" className={cn("text-foreground/70 transition-colors hover:text-foreground", showVolume && "text-primary")}>
-            <Volume2 className="h-[21px] w-[21px]" />
-          </button>
-          <button onClick={() => navigate("/queue")} aria-label="Queue" className="text-foreground/70 transition-colors hover:text-foreground">
-            <ListMusic className="h-[22px] w-[22px]" />
-          </button>
+      <section className="relative z-10 flex shrink-0 items-center justify-between px-6 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-4 lg:hidden">
+        <button onClick={() => setShowVolume((v) => !v)} aria-label="Device and volume" className="flex items-center gap-1.5 text-[11px] font-bold text-primary">
+          <MonitorSpeaker className="h-4 w-4" /> This device
+        </button>
+        <div className="flex items-center gap-6">
+          <button onClick={() => setShowShareSheet(true)} aria-label="Share" className="text-foreground"><Share2 className="h-5 w-5" /></button>
+          <button onClick={() => navigate("/queue")} aria-label="Queue" className="text-foreground"><ListMusic className="h-5 w-5" /></button>
         </div>
-        <p className="mt-2.5 truncate text-center text-[11px] font-medium text-foreground/40">
-          {nextTrack ? `Next: ${toTitleCase(nextTrack.title)}` : "routenet"}
-        </p>
       </section>
 
       <AnimatePresence>
@@ -364,5 +341,30 @@ export default function NowPlaying() {
       <ShareSheet isOpen={showShareSheet} onClose={() => setShowShareSheet(false)} item={{ type: "track", title: currentTrack.title, subtitle: currentTrack.artist, image: currentTrack.artwork, id: currentTrack.id }} />
       <AddToPlaylistDialog isOpen={showPlaylistDialog} onClose={() => setShowPlaylistDialog(false)} track={{ title: currentTrack.title, artist: currentTrack.artist, album: currentTrack.album, artwork: currentTrack.artwork, duration: currentTrack.duration }} />
     </motion.main>
+  );
+}
+
+
+/** One synced lyric line shown above the song title on phones. */
+function PhoneLyricLine({ title, artist, currentTime, onOpen }: { title: string; artist: string; currentTime: number; onOpen: () => void }) {
+  const { data } = useQuery({
+    queryKey: ["lyrics", title, artist],
+    queryFn: async () => {
+      const { data, error } = await supabase.functions.invoke("lyrics", { body: { title, artist } });
+      if (error) throw error;
+      return data as { lyrics: string | null; syncedLyrics?: string | null };
+    },
+    enabled: !!title && !!artist,
+    staleTime: 30 * 60 * 1000,
+  });
+  const lines = useMemo(() => (data?.syncedLyrics ? parseSyncedLyrics(data.syncedLyrics) : []), [data?.syncedLyrics]);
+  let text = "";
+  for (const l of lines) { if (l.time <= currentTime) text = l.text; else break; }
+  if (!text && lines.length) text = lines[0].text;
+  if (!text) return null;
+  return (
+    <button onClick={onOpen} className="mb-2 text-left text-[19px] font-bold leading-snug text-foreground [text-shadow:0_2px_12px_hsl(0_0%_0%/0.6)]">
+      <motion.span key={text} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="line-clamp-2">{text}</motion.span>
+    </button>
   );
 }

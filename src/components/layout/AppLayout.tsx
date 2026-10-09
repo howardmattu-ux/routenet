@@ -37,13 +37,13 @@ export function AppLayout({ children }: AppLayoutProps) {
   const hideMiniplayer = hideChrome || location.pathname === "/now-playing" || location.pathname === "/ai-dj" || location.pathname === "/radio";
   
   return (
-    <div className="relative flex min-h-screen flex-col overflow-x-hidden lg:h-screen lg:overflow-hidden lg:bg-sidebar">
+    <div className="relative flex min-h-screen flex-col overflow-x-hidden lg:h-screen lg:overflow-hidden lg:bg-background">
       <GlobalAudioPlayer />
-      <div className="flex min-h-0 flex-1 lg:gap-2 lg:p-2 lg:pb-0">
+      <div className="flex min-h-0 flex-1 lg:gap-2 lg:p-2 lg:pb-2">
         {!hideChrome && <DesktopSidebar />}
-        <div className="flex min-w-0 flex-1 flex-col lg:overflow-hidden lg:rounded-md lg:bg-background-elevated">
+        <div className="flex min-w-0 flex-1 flex-col lg:overflow-hidden lg:rounded-lg lg:bg-background-elevated">
           {!hideChrome && <DesktopTopBar />}
-          <main className={`relative min-h-0 flex-1 lg:overflow-y-auto ${currentTrack && !hideMiniplayer ? "pb-28 lg:pb-0" : "pb-14 lg:pb-0"}`}>
+          <main className={`custom-scrollbar relative min-h-0 flex-1 lg:overflow-y-auto ${currentTrack && !hideMiniplayer ? "pb-28 lg:pb-0" : "pb-14 lg:pb-0"}`}>
             {lyricsOpen ? (
               <>
                 <div className="hidden h-full lg:block"><DesktopLyricsPanel /></div>
