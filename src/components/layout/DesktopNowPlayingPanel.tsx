@@ -37,7 +37,6 @@ export function DesktopNowPlayingPanel() {
           <VideoCanvas
             trackId={currentTrack.id}
             artwork={currentTrack.artwork || ""}
-            videoId={currentTrack.youtubeId || getCachedYouTubeId(currentTrack.title, currentTrack.artist) || undefined}
             artist={currentTrack.artist}
             title={currentTrack.title}
           />

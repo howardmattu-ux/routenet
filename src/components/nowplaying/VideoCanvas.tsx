@@ -30,7 +30,7 @@ async function artistPool(artist: string): Promise<string[]> {
   if (poolCache.has(key)) return poolCache.get(key)!;
   const queries = names.length > 1
     ? [`${names.join(" ")} official music video`, ...names.map((n) => `${n} official music video`)]
-    : [`${names[0]} official music video`, `${names[0]} music video`];
+    : [`${names[0]} official music video`];
   const results = await Promise.all(queries.map((q) => searchYouTubeVideos(q, 12).catch(() => [] as any[])));
   const firsts = names.map((n) => n.toLowerCase().split(" ")[0]);
   const ids = new Set<string>();
@@ -68,17 +68,19 @@ interface Props {
   onActiveChange?: (active: boolean) => void;
 }
 
-export function VideoCanvas({ trackId, artwork, videoId, artist = "", enabled = true, className, onActiveChange }: Props) {
-  const [id, setId] = useState(videoId || "");
+export function VideoCanvas({ trackId, artwork, artist = "", enabled = true, className, onActiveChange }: Props) {
+  const [id, setId] = useState("");
 
+  // Always use the artist's official music videos — never the audio stream ID,
+  // which is usually a static/visualizer upload.
   useEffect(() => {
     let cancelled = false;
-    setId(videoId || "");
-    if (!videoId && artist && enabled) {
+    setId("");
+    if (artist && enabled) {
       pickArtistVideo(artist).then((v) => { if (!cancelled) setId(v); });
     }
     return () => { cancelled = true; };
-  }, [trackId, videoId, artist, enabled]);
+  }, [trackId, artist, enabled]);
 
   const active = enabled && !!id;
   // Hide the frame until YouTube's own start-up buttons have gone away.
