@@ -81,6 +81,9 @@ export function VideoCanvas({ trackId, artwork, videoId, artist = "", enabled = 
   }, [trackId, videoId, artist, enabled]);
 
   const active = enabled && !!id;
+  // Hide the frame until YouTube's own start-up buttons have gone away.
+  const [ready, setReady] = useState(false);
+  useEffect(() => { setReady(false); if (!id) return; const t = window.setTimeout(() => setReady(true), 2600); return () => window.clearTimeout(t); }, [id]);
   useEffect(() => { onActiveChange?.(active); }, [active, onActiveChange]);
 
   return (
@@ -92,7 +95,8 @@ export function VideoCanvas({ trackId, artwork, videoId, artist = "", enabled = 
           tabIndex={-1}
           src={`https://www.youtube-nocookie.com/embed/${id}?autoplay=1&mute=1&controls=0&loop=1&playlist=${id}&modestbranding=1&playsinline=1&rel=0&iv_load_policy=3&disablekb=1&fs=0&start=30`}
           allow="autoplay; encrypted-media"
-          className="pointer-events-none absolute left-1/2 top-1/2 h-[180%] w-[320%] -translate-x-1/2 -translate-y-1/2 sm:w-[180%] lg:h-[140%] lg:w-[140%]"
+          className={cn("pointer-events-none absolute left-1/2 transition-opacity duration-1000", ready ? "opacity-100" : "opacity-0")}
+          data-x=" top-1/2 h-[180%] w-[320%] -translate-x-1/2 -translate-y-1/2 sm:w-[180%] lg:h-[140%] lg:w-[140%]"
         />
       ) : artwork ? (
         <img src={artwork} alt="" className="h-full w-full scale-110 object-cover blur-2xl opacity-60" />
