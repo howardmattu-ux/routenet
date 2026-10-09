@@ -157,7 +157,7 @@ export default function NowPlaying() {
           style={{ background: bgColor }}
         />
       </AnimatePresence>
-      <VideoCanvas trackId={currentTrack.id} artwork={display.artwork} videoId={videoId} artist={currentTrack.artist} title={currentTrack.title} onActiveChange={setVideoActive} />
+      <VideoCanvas trackId={currentTrack.id} artwork={display.artwork} artist={currentTrack.artist} title={currentTrack.title} onActiveChange={setVideoActive} />
 
       {/* Desktop: bent artwork left, rolling lyrics right */}
       <div className="relative z-10 hidden min-h-0 flex-1 grid-cols-[minmax(0,5fr)_minmax(0,6fr)] gap-12 px-14 pb-28 pt-10 lg:grid">
