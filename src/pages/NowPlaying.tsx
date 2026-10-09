@@ -45,6 +45,10 @@ export default function NowPlaying() {
   const [showVideo, setShowVideo] = useState(false);
   const [showVolume, setShowVolume] = useState(false);
   const [videoActive, setVideoActive] = useState(false);
+  // Artwork is the default; the background video only plays after "Switch to video".
+  const [canvasOn, setCanvasOn] = useState(() => localStorage.getItem("routenet_canvas_on") === "1");
+  const toggleCanvas = (on: boolean) => { localStorage.setItem("routenet_canvas_on", on ? "1" : "0"); setCanvasOn(on); };
+  const showCanvas = canvasOn && videoActive;
   const [volume, setVolume] = useState(() => getGlobalVolume());
   /** Deezer metadata for the current song (title / artist / album / hi-res art). */
   const [meta, setMeta] = useState<DeezerMeta | null>(null);
@@ -157,7 +161,17 @@ export default function NowPlaying() {
           style={{ background: bgColor }}
         />
       </AnimatePresence>
-      <VideoCanvas trackId={currentTrack.id} artwork={display.artwork} artist={currentTrack.artist} title={currentTrack.title} onActiveChange={setVideoActive} />
+      <VideoCanvas trackId={currentTrack.id} artwork={display.artwork} artist={currentTrack.artist} title={currentTrack.title} enabled={canvasOn} onActiveChange={setVideoActive} />
+
+      {/* Desktop: Artwork / Video switch */}
+      <div className="absolute left-1/2 top-6 z-20 hidden -translate-x-1/2 rounded-full bg-background/40 p-1 backdrop-blur-md lg:flex">
+        {([["Artwork", false], ["Video", true]] as const).map(([label, on]) => (
+          <button key={label} onClick={() => toggleCanvas(on)} aria-pressed={canvasOn === on}
+            className={cn("rounded-full px-4 py-1.5 text-xs font-bold transition-colors", canvasOn === on ? "bg-foreground text-background" : "text-foreground/70 hover:text-foreground")}>
+            {label}
+          </button>
+        ))}
+      </div>
 
       {/* Desktop: bent artwork left, rolling lyrics right */}
       <div className="relative z-10 hidden min-h-0 flex-1 grid-cols-[minmax(0,5fr)_minmax(0,6fr)] gap-12 px-14 pb-28 pt-10 lg:grid">
@@ -165,7 +179,10 @@ export default function NowPlaying() {
           <Button variant="ghost" size="icon" onClick={() => navigate(-1)} aria-label="Back" className="mb-6 rounded-full text-foreground/70 hover:bg-foreground/10">
             <ChevronDown className="h-5 w-5" />
           </Button>
-          <div className={`relative flex w-full max-w-[min(34vw,58vh)] flex-col items-center transition-opacity duration-700 ${videoActive ? "pointer-events-none opacity-0" : "opacity-100"}`}>
+          <motion.div
+            animate={showCanvas ? { x: -140, opacity: 0, scale: 0.9, filter: "blur(6px)" } : { x: 0, opacity: 1, scale: 1, filter: "blur(0px)" }}
+            transition={{ type: "spring", stiffness: 70, damping: 20, mass: 1 }}
+            className={cn("relative flex w-full max-w-[min(34vw,58vh)] flex-col items-center", showCanvas && "pointer-events-none")}>
             <div className="pointer-events-none absolute -inset-16 rounded-full bg-primary/20 blur-[90px]" />
             <motion.div
               key={currentTrack.id}
@@ -178,7 +195,7 @@ export default function NowPlaying() {
             </motion.div>
             {/* light beam holding the cover in the air */}
             <div className="pointer-events-none mt-2 h-24 w-1/2 bg-gradient-to-b from-foreground/25 to-transparent blur-md [clip-path:polygon(20%_0,80%_0,55%_100%,45%_100%)]" />
-          </div>
+          </motion.div>
           <h1 className="mt-8 truncate text-3xl font-bold text-foreground">{toTitleCase(display.title)}</h1>
           <button onClick={() => navigate(`/artist/${encodeURIComponent(display.artist)}`)} className="truncate text-left text-lg text-foreground/60 hover:text-foreground">
             {toTitleCase(display.artist)}
@@ -187,6 +204,7 @@ export default function NowPlaying() {
         <LyricsStream
           title={currentTrack.title}
           artist={currentTrack.artist}
+          album={display.album}
           currentTime={currentTime}
           onSeek={(t) => actualDuration > 0 && handleSeek(t / actualDuration)}
         />
@@ -204,13 +222,13 @@ export default function NowPlaying() {
       </header>
 
       <div className="relative z-10 flex min-h-0 flex-1 flex-col px-6 lg:hidden">
-        {!videoActive && (
-          <div className="flex flex-1 items-center justify-center py-6">
+        {!showCanvas && (
+          <div className="flex min-h-0 flex-1 items-center justify-center py-3">
             <motion.div
               key={currentTrack.id}
               initial={{ scale: 0.96, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              className="aspect-square w-full max-w-[min(80vw,42dvh)] overflow-hidden rounded-md shadow-[0_18px_50px_-12px_hsl(0_0%_0%/0.7)]"
+              className="aspect-square w-full max-w-[min(78vw,34dvh)] overflow-hidden rounded-md shadow-[0_18px_50px_-12px_hsl(0_0%_0%/0.7)]"
             >
               {isResolving ? (
                 <div className="flex h-full w-full items-center justify-center bg-secondary"><Loader2 className="h-7 w-7 animate-spin text-primary" /></div>
@@ -220,14 +238,12 @@ export default function NowPlaying() {
             </motion.div>
           </div>
         )}
-        {videoActive && <div className="flex-1" />}
+        {showCanvas && <div className="flex-1" />}
 
         <PhoneLyricLine title={currentTrack.title} artist={currentTrack.artist} currentTime={currentTime} onOpen={() => navigate("/lyrics")} />
-        {videoId && (
-          <button onClick={() => setShowVideo(true)} className="mb-4 flex w-fit items-center gap-1.5 rounded-md bg-background/50 px-2.5 py-1.5 text-[12px] font-bold text-foreground backdrop-blur-sm">
-            <MonitorPlay className="h-3.5 w-3.5" /> Switch to video
-          </button>
-        )}
+        <button onClick={() => toggleCanvas(!canvasOn)} className="mb-3 flex w-fit items-center gap-1.5 rounded-md bg-background/50 px-2.5 py-1.5 text-[12px] font-bold text-foreground backdrop-blur-sm">
+          <MonitorPlay className="h-3.5 w-3.5" /> {canvasOn ? "Switch to artwork" : "Switch to video"}
+        </button>
 
         <div className="flex items-center gap-3">
           <img src={display.artwork} alt="" className="h-12 w-12 shrink-0 rounded object-cover" />
@@ -242,7 +258,7 @@ export default function NowPlaying() {
           </button>
         </div>
 
-        <div className="mt-4">
+        <div className="mt-3">
           <Slider
             value={[localProgress * 100]}
             max={100}
@@ -280,15 +296,15 @@ export default function NowPlaying() {
           </button>
         </div>
 
-        {showVolume && (
-          <div className="mt-4 flex items-center gap-3">
+        {(
+          <div className="mt-3 flex items-center gap-3">
             <Volume2 className="h-4 w-4 shrink-0 text-foreground/60" />
             <Slider value={[volume * 100]} max={100} step={1} aria-label="Volume" onValueChange={([value]) => { setVolume(value / 100); setGlobalVolume(value / 100); }} className="flex-1 [&_[role=slider]]:h-2.5 [&_[role=slider]]:w-2.5 [&_[role=slider]]:border-0 [&>span]:h-[3px]" />
           </div>
         )}
       </div>
 
-      <section className="relative z-10 flex shrink-0 items-center justify-between px-6 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-4 lg:hidden">
+      <section className="relative z-10 flex shrink-0 items-center justify-between px-6 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3 lg:hidden">
         <button onClick={() => setShowVolume((v) => !v)} aria-label="Device and volume" className="flex items-center gap-1.5 text-[11px] font-bold text-primary">
           <MonitorSpeaker className="h-4 w-4" /> This device
         </button>
@@ -302,7 +318,7 @@ export default function NowPlaying() {
         {showMore && (
           <>
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-40 bg-background/70 backdrop-blur-sm" onClick={() => setShowMore(false)} />
-            <motion.div initial={{ y: 80, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 80, opacity: 0 }} className="fixed inset-x-0 bottom-0 z-50 rounded-t-2xl border border-border bg-card p-4 shadow-elevated">
+            <motion.div initial={{ y: 80, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 80, opacity: 0 }} className="fixed inset-x-0 bottom-0 z-50 max-h-[85dvh] overflow-y-auto rounded-t-2xl border border-border bg-card p-4 shadow-elevated">
               <div className="mb-4 flex items-center gap-3">
                 <img src={currentTrack.artwork} alt={currentTrack.title} className="h-12 w-12 rounded-lg object-cover" />
                 <div className="min-w-0">
@@ -312,8 +328,13 @@ export default function NowPlaying() {
               </div>
               <div className="grid gap-2">
                 {[
-                  { icon: Plus, label: "Add to Playlist", action: () => setShowPlaylistDialog(true) },
-                  { icon: ListMusic, label: "Open Queue", action: () => navigate("/queue") },
+                  { icon: Heart, label: liked ? "Remove from Liked Songs" : "Add to Liked Songs", action: handleToggleLike },
+                  { icon: Plus, label: "Add to playlist", action: () => setShowPlaylistDialog(true) },
+                  { icon: ListMusic, label: "Go to queue", action: () => navigate("/queue") },
+                  { icon: Mic2, label: "View artist", action: () => navigate(`/artist/${encodeURIComponent(display.artist)}`) },
+                  { icon: MessageSquareQuote, label: "Show lyrics", action: () => navigate("/lyrics") },
+                  { icon: MonitorPlay, label: canvasOn ? "Switch to artwork" : "Switch to video", action: () => toggleCanvas(!canvasOn) },
+                  { icon: Volume2, label: "Sleep timer", action: () => navigate("/sleep-timer") },
                   { icon: ArrowDownCircle, label: downloadStatus === "done" ? "Downloaded" : "Download", action: handleDownload },
                   { icon: Share2, label: "Share", action: () => setShowShareSheet(true) },
                 ].map(({ icon: Icon, label, action }) => (
