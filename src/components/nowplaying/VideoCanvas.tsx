@@ -92,17 +92,35 @@ async function pickVideo(title: string, artist: string): Promise<string> {
   if (songCache.has(key)) return songCache.get(key)!;
   const firsts = names.map((n) => n.toLowerCase().split(" ")[0]);
   const words = song.toLowerCase().split(/\s+/).filter((w) => w.length > 2).slice(0, 3);
-  const steps: Array<[string, string[]]> = [];
+  // Step 1 (unchanged): the song's own music video.
   if (song) {
-    steps.push([`${song} ${names[0]} music video`, words]);
-    steps.push([`${song} ${names[0]} fan made video`, words]);
-  }
-  if (names.length > 1) steps.push([`${names.join(" ")} music video`, []]);
-  steps.push([`${names[0]} vevo music video`, []]);
-  for (const [q, w] of steps) {
-    const id = await firstMatch(q, w, firsts);
+    const id = await firstMatch(`${song} ${names[0]} music video`, words, firsts);
     if (id) { songCache.set(key, id); return id; }
   }
+  // Step 2: any version of this song — Vevo, official, fan-made, edits.
+  // Song + artist must be in the title; uploader channel doesn't matter.
+  if (song) {
+    const queries = [
+      `${song} ${names[0]} vevo`,
+      `${song} ${names[0]} official video`,
+      `${song} ${names[0]} fan made video`,
+      `${song} ${names[0]} edit`,
+      `${song} ${names[0]} cinematic video`,
+      ...(names.length > 1 ? [`${song} ${names.join(" ")} video`] : []),
+    ];
+    const results = await Promise.all(queries.map((q) => searchYouTubeVideos(q, 10).catch(() => [] as any[])));
+    for (const list of results) {
+      for (const v of list as any[]) {
+        const t = String(v.title || v.snippet?.title || "").toLowerCase();
+        if (STATIC_RE.test(t)) continue;
+        if (words.length && !words.some((w) => t.includes(w))) continue;
+        if (!firsts.some((f) => t.includes(f))) continue;
+        const id = idOf(v);
+        if (id) { songCache.set(key, id); return id; }
+      }
+    }
+  }
+  // Step 3 (last resort): random video from the artist's pool.
   return pickArtistVideo(artist);
 }
 
