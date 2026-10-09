@@ -14,7 +14,7 @@ import { SyncedVideoPanel } from "@/components/nowplaying/SyncedVideoPanel";
 import { VideoCanvas } from "@/components/nowplaying/VideoCanvas";
 import { LyricsStream, parseSyncedLyrics } from "@/components/nowplaying/LyricsStream";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { fetchLyrics } from "@/services/lyricsLookup";
 import { lookupMeta, peekMeta, type DeezerMeta } from "@/services/metadataEnrichment";
 
 import { toTitleCase } from "@/utils/toTitleCase";
@@ -349,11 +349,7 @@ export default function NowPlaying() {
 function PhoneLyricLine({ title, artist, currentTime, onOpen }: { title: string; artist: string; currentTime: number; onOpen: () => void }) {
   const { data } = useQuery({
     queryKey: ["lyrics", title, artist],
-    queryFn: async () => {
-      const { data, error } = await supabase.functions.invoke("lyrics", { body: { title, artist } });
-      if (error) throw error;
-      return data as { lyrics: string | null; syncedLyrics?: string | null };
-    },
+    queryFn: () => fetchLyrics(title, artist),
     enabled: !!title && !!artist,
     staleTime: 30 * 60 * 1000,
   });
