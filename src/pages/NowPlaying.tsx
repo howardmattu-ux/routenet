@@ -210,25 +210,39 @@ export default function NowPlaying() {
         />
       </div>
 
-      {/* Phone: Spotify-style — video fills the screen, controls sit at the bottom */}
-      <header className="relative z-10 flex shrink-0 items-center justify-between px-3 pt-[calc(0.5rem+env(safe-area-inset-top))] lg:hidden">
-        <button onClick={() => navigate(-1)} aria-label="Back" className="flex h-10 w-10 items-center justify-center text-foreground">
-          <ChevronDown className="h-6 w-6" />
+      {/* Phone: frosted player — artwork card, info row, pills, controls, bottom toolbar */}
+      {!showCanvas && (
+        <div className="pointer-events-none absolute inset-0 lg:hidden">
+          <img src={display.artwork} alt="" className="h-full w-full scale-125 object-cover opacity-50 blur-3xl" />
+          <div className="absolute inset-0 bg-background/40" />
+        </div>
+      )}
+      <header className="relative z-10 flex shrink-0 items-center justify-between px-5 pt-[calc(0.75rem+env(safe-area-inset-top))] lg:hidden">
+        <button onClick={() => navigate(-1)} aria-label="Back" className="min-w-0 text-left">
+          <span className="flex items-center gap-1.5 text-[13px] font-semibold text-foreground/70">
+            <ChevronDown className="h-4 w-4 shrink-0" />
+            <span className="truncate">{toTitleCase(display.album || display.artist)}</span>
+          </span>
+          <span className="block truncate pl-5 text-[12px] font-bold text-foreground">Now playing</span>
         </button>
-        <span className="truncate px-2 text-[13px] font-bold text-foreground">{toTitleCase(display.artist)}</span>
-        <button onClick={() => setShowMore(true)} aria-label="More" className="flex h-10 w-10 items-center justify-center text-foreground">
-          <MoreHorizontal className="h-5 w-5" />
-        </button>
+        <div className="flex items-center gap-5">
+          <button onClick={() => toggleCanvas(!canvasOn)} aria-label={canvasOn ? "Switch to artwork" : "Switch to video"} className={cn("text-foreground", canvasOn && "text-primary")}>
+            <MonitorPlay className="h-5 w-5" />
+          </button>
+          <button onClick={() => setShowVolume((v) => !v)} aria-label="Device and volume" className="text-foreground">
+            <MonitorSpeaker className="h-5 w-5" />
+          </button>
+        </div>
       </header>
 
       <div className="relative z-10 flex min-h-0 flex-1 flex-col px-6 lg:hidden">
-        {!showCanvas && (
-          <div className="flex min-h-0 flex-1 items-center justify-center py-3">
+        <div className="flex min-h-0 flex-1 items-center justify-center py-4">
+          {!showCanvas ? (
             <motion.div
               key={currentTrack.id}
               initial={{ scale: 0.96, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              className="aspect-square w-full max-w-[min(78vw,34dvh)] overflow-hidden rounded-md shadow-[0_18px_50px_-12px_hsl(0_0%_0%/0.7)]"
+              className="aspect-square w-full max-w-[min(88vw,46dvh)] overflow-hidden rounded-xl shadow-[0_24px_60px_-14px_hsl(0_0%_0%/0.75)]"
             >
               {isResolving ? (
                 <div className="flex h-full w-full items-center justify-center bg-secondary"><Loader2 className="h-7 w-7 animate-spin text-primary" /></div>
@@ -236,82 +250,80 @@ export default function NowPlaying() {
                 <img src={display.artwork} alt={display.title} className="h-full w-full object-cover" />
               )}
             </motion.div>
-          </div>
-        )}
-        {showCanvas && <div className="flex-1" />}
-
-        <PhoneLyricLine title={currentTrack.title} artist={currentTrack.artist} currentTime={currentTime} onOpen={() => navigate("/lyrics")} />
-        <button onClick={() => toggleCanvas(!canvasOn)} className="mb-3 flex w-fit items-center gap-1.5 rounded-md bg-background/50 px-2.5 py-1.5 text-[12px] font-bold text-foreground backdrop-blur-sm">
-          <MonitorPlay className="h-3.5 w-3.5" /> {canvasOn ? "Switch to artwork" : "Switch to video"}
-        </button>
+          ) : (
+            <div className="flex h-full w-full items-end">
+              <PhoneLyricLine title={currentTrack.title} artist={currentTrack.artist} currentTime={currentTime} onOpen={() => navigate("/lyrics")} />
+            </div>
+          )}
+        </div>
 
         <div className="flex items-center gap-3">
-          <img src={display.artwork} alt="" className="h-12 w-12 shrink-0 rounded object-cover" />
           <div className="min-w-0 flex-1">
             <h1 className="truncate text-[20px] font-bold leading-tight text-foreground">{toTitleCase(display.title)}</h1>
-            <button onClick={() => navigate(`/artist/${encodeURIComponent(display.artist)}`)} className="block max-w-full truncate text-[15px] text-foreground/70">
+            <button onClick={() => navigate(`/artist/${encodeURIComponent(display.artist)}`)} className="mt-0.5 block max-w-full truncate text-[14px] text-foreground/60">
               {toTitleCase(display.artist)}
             </button>
           </div>
-          <button onClick={handleToggleLike} aria-label="Like" className={cn("flex h-10 w-10 items-center justify-center text-foreground", liked && "text-primary")}>
-            {liked ? <CheckCircle2 className="h-7 w-7" fill="currentColor" stroke="hsl(var(--background))" /> : <PlusCircle className="h-7 w-7" />}
+          <button onClick={handleToggleLike} aria-label="Like" className={cn("flex h-11 w-11 items-center justify-center rounded-full bg-foreground/10 text-foreground backdrop-blur-md", liked && "text-primary")}>
+            <Heart className="h-5 w-5" fill={liked ? "currentColor" : "none"} />
+          </button>
+          <button onClick={() => setShowMore(true)} aria-label="More" className="flex h-11 w-11 items-center justify-center rounded-full bg-foreground/10 text-foreground backdrop-blur-md">
+            <MoreHorizontal className="h-5 w-5 rotate-90" />
           </button>
         </div>
 
-        <div className="mt-3">
+        <div className="mt-5">
           <Slider
             value={[localProgress * 100]}
             max={100}
             step={0.05}
             aria-label="Seek"
             onValueChange={([value]) => handleSeek(value / 100)}
-            className="py-1 [&_[role=slider]]:h-3 [&_[role=slider]]:w-3 [&_[role=slider]]:border-0 [&_[role=slider]]:bg-foreground [&>span]:h-[3px]"
+            className="py-1 [&_[role=slider]]:h-3 [&_[role=slider]]:w-1.5 [&_[role=slider]]:rounded-sm [&_[role=slider]]:border-0 [&_[role=slider]]:bg-foreground [&>span]:h-[3px]"
           />
-          <div className="mt-1 flex items-center justify-between text-[11px] tabular-nums text-foreground/60">
-            <span>{formatTime(currentTime)}</span>
-            <span>-{formatTime(Math.max(0, actualDuration - currentTime))}</span>
+          <div className="mt-2 flex items-center justify-between text-[11px] font-semibold tabular-nums text-foreground/70">
+            <span className="rounded-md bg-foreground/10 px-2 py-1">{formatTime(currentTime)}</span>
+            <span className="rounded-md bg-foreground/10 px-2.5 py-1 text-[10px]">● High quality</span>
+            <span className="rounded-md bg-foreground/10 px-2 py-1">-{formatTime(Math.max(0, actualDuration - currentTime))}</span>
           </div>
         </div>
 
-        <div className="mt-3 flex items-center justify-between">
-          <button onClick={toggleShuffle} aria-pressed={shuffle} aria-label="Shuffle" className={cn("text-foreground", shuffle && "text-primary")}>
-            <Shuffle className="h-6 w-6" />
+        <div className="mt-6 flex items-center justify-between px-1">
+          <button onClick={toggleShuffle} aria-pressed={shuffle} aria-label="Shuffle" className={cn("text-foreground/80", shuffle && "text-primary")}>
+            <Shuffle className="h-5 w-5" />
           </button>
           <button onClick={previous} aria-label="Previous track" className="text-foreground active:scale-95">
-            <SkipBack className="h-8 w-8" fill="currentColor" />
+            <SkipBack className="h-6 w-6" />
           </button>
           <button
             onClick={togglePlay}
             disabled={isResolving}
             aria-label={isPlaying ? "Pause" : "Play"}
-            className="flex h-16 w-16 items-center justify-center rounded-full bg-foreground text-background active:scale-95 disabled:opacity-60"
+            className="flex h-16 w-16 items-center justify-center text-foreground active:scale-95 disabled:opacity-60"
           >
-            {isResolving ? <Loader2 className="h-7 w-7 animate-spin" /> : isPlaying ? <Pause className="h-7 w-7" fill="currentColor" /> : <Play className="ml-1 h-7 w-7" fill="currentColor" />}
+            {isResolving ? <Loader2 className="h-9 w-9 animate-spin" /> : isPlaying ? <Pause className="h-12 w-12" strokeWidth={1.5} /> : <Play className="ml-1 h-12 w-12" strokeWidth={1.5} />}
           </button>
           <button onClick={next} aria-label="Next track" className="text-foreground active:scale-95">
-            <SkipForward className="h-8 w-8" fill="currentColor" />
+            <SkipForward className="h-6 w-6" />
           </button>
-          <button onClick={toggleRepeat} aria-label={`Repeat: ${repeat}`} className={cn("text-foreground", repeat !== "off" && "text-primary")}>
-            {repeat === "one" ? <Repeat1 className="h-6 w-6" /> : <Repeat className="h-6 w-6" />}
+          <button onClick={toggleRepeat} aria-label={`Repeat: ${repeat}`} className={cn("text-foreground/80", repeat !== "off" && "text-primary")}>
+            {repeat === "one" ? <Repeat1 className="h-5 w-5" /> : <Repeat className="h-5 w-5" />}
           </button>
         </div>
 
-        {(
-          <div className="mt-3 flex items-center gap-3">
+        {showVolume && (
+          <div className="mt-4 flex items-center gap-3">
             <Volume2 className="h-4 w-4 shrink-0 text-foreground/60" />
             <Slider value={[volume * 100]} max={100} step={1} aria-label="Volume" onValueChange={([value]) => { setVolume(value / 100); setGlobalVolume(value / 100); }} className="flex-1 [&_[role=slider]]:h-2.5 [&_[role=slider]]:w-2.5 [&_[role=slider]]:border-0 [&>span]:h-[3px]" />
           </div>
         )}
       </div>
 
-      <section className="relative z-10 flex shrink-0 items-center justify-between px-6 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3 lg:hidden">
-        <button onClick={() => setShowVolume((v) => !v)} aria-label="Device and volume" className="flex items-center gap-1.5 text-[11px] font-bold text-primary">
-          <MonitorSpeaker className="h-4 w-4" /> This device
-        </button>
-        <div className="flex items-center gap-6">
-          <button onClick={() => setShowShareSheet(true)} aria-label="Share" className="text-foreground"><Share2 className="h-5 w-5" /></button>
-          <button onClick={() => navigate("/queue")} aria-label="Queue" className="text-foreground"><ListMusic className="h-5 w-5" /></button>
-        </div>
+      <section className="relative z-10 flex shrink-0 items-center justify-around px-6 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-5 lg:hidden">
+        <button onClick={() => navigate("/queue")} aria-label="Queue" className="text-foreground/80"><ListMusic className="h-5 w-5" /></button>
+        <button onClick={() => toggleCanvas(!canvasOn)} aria-label="Video" className={cn("text-foreground/80", canvasOn && "text-primary")}><MonitorPlay className="h-5 w-5" /></button>
+        <button onClick={() => navigate("/lyrics")} aria-label="Lyrics" className="text-foreground/80"><Mic2 className="h-5 w-5" /></button>
+        <button onClick={() => setShowShareSheet(true)} aria-label="Share" className="text-foreground/80"><Share2 className="h-5 w-5" /></button>
       </section>
 
       <AnimatePresence>
