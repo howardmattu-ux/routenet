@@ -125,7 +125,7 @@ function SongActionsMenu({ track, open, onToggle, onClose, onAddToPlaylist }: {
   onClose: () => void;
   onAddToPlaylist: () => void;
 }) {
-  const { addToQueue } = usePlayer();
+  const { addToQueue, playNext } = usePlayer();
   return (
     <div className="relative shrink-0" onClick={(e) => e.stopPropagation()}>
       <button
@@ -145,6 +145,17 @@ function SongActionsMenu({ track, open, onToggle, onClose, onAddToPlaylist }: {
               exit={{ opacity: 0, scale: 0.92 }}
               className="absolute right-0 top-9 z-50 min-w-44 overflow-hidden rounded-xl border border-border/30 bg-card shadow-xl"
             >
+              <button
+                onClick={async () => {
+                  onClose();
+                  playNext(track);
+                  const { toast } = await import("sonner");
+                  toast.success("Playing next");
+                }}
+                className="flex w-full items-center gap-3 px-3 py-2.5 text-xs font-medium text-foreground hover:bg-muted/20"
+              >
+                <Play className="h-3.5 w-3.5 text-muted-foreground" />Play next
+              </button>
               <button onClick={onAddToPlaylist} className="flex w-full items-center gap-3 px-3 py-2.5 text-xs font-medium text-foreground hover:bg-muted/20">
                 <Plus className="h-3.5 w-3.5 text-muted-foreground" />Add to playlist
               </button>

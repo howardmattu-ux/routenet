@@ -28,7 +28,7 @@ interface TrackCardProps {
 }
 
 export function TrackCard({ track, index, showIndex, contextTracks, download, hideStreams, radioFromSearch }: TrackCardProps) {
-  const { play, setQueue, addToQueue, currentTrack, isPlaying } = usePlayer();
+  const { play, setQueue, addToQueue, playNext, currentTrack, isPlaying } = usePlayer();
   const navigate = useNavigate();
   const { enabled: downloadModeOn, statusOf, startDownload } = useDownloadMode();
   const isCurrentTrack = currentTrack?.id === track.id;
@@ -168,6 +168,14 @@ export function TrackCard({ track, index, showIndex, contextTracks, download, hi
                   </button>
                   <button onClick={(e) => { e.stopPropagation(); setShowMenu(false); setShowPlaylistDialog(true); }} className="flex w-full items-center gap-3 px-3 py-2 text-xs text-foreground hover:bg-muted/20">
                     <Plus className="h-3.5 w-3.5 text-muted-foreground" />Add to Playlist
+                  </button>
+                  <button onClick={async (e) => {
+                    e.stopPropagation(); setShowMenu(false);
+                    playNext(track);
+                    const { toast } = await import("sonner");
+                    toast.success("Playing next");
+                  }} className="flex w-full items-center gap-3 px-3 py-2 text-xs text-foreground hover:bg-muted/20">
+                    <Play className="h-3.5 w-3.5 text-muted-foreground" />Play Next
                   </button>
                   <button onClick={async (e) => {
                     e.stopPropagation(); setShowMenu(false);
