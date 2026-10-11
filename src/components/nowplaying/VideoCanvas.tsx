@@ -4,9 +4,10 @@
  * searching "<artist(s)> official music video" (no song title, so static
  * cover-art uploads are avoided). Purely decorative and never receives taps.
  */
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import { searchYouTubeVideos } from "@/services/musicApi";
+import { usePlayer } from "@/context/PlayerContext";
 
 const poolCache = new Map<string, string[]>();
 const STATIC_RE = /\b(official audio|audio only|visuali[sz]er|lyric|lyrics|topic|full album|slowed|reverb|sped up|8d|nightcore|instrumental|karaoke|stream|cover art|static|album art|provided to youtube|art track|audio)\b/i;
@@ -168,14 +169,22 @@ export function VideoCanvas({ trackId, artwork, artist = "", title = "", enabled
   useEffect(() => { setReady(false); if (!id) return; const t = window.setTimeout(() => setReady(true), 3800); return () => window.clearTimeout(t); }, [id]);
   useEffect(() => { onActiveChange?.(active); }, [active, onActiveChange]);
 
+  // Sync script: video pauses/plays with the song and starts at the same point in the song.
+  const { isPlaying } = usePlayer();
+  const frameRef = useRef<HTMLIFrameElement>(null);
+  const send = (func: string, args: unknown[] = []) =>
+    frameRef.current?.contentWindow?.postMessage(JSON.stringify({ event: "command", func, args }), "*");
+  useEffect(() => { if (ready) send(isPlaying ? "playVideo" : "pauseVideo"); }, [isPlaying, ready]);
+
   return (
     <div aria-hidden className={cn("pointer-events-none absolute inset-0 overflow-hidden select-none", className)}>
       {active ? (
         <iframe
+          ref={frameRef}
           key={id}
           title="canvas"
           tabIndex={-1}
-          src={`https://www.youtube-nocookie.com/embed/${id}?autoplay=1&mute=1&controls=0&loop=1&playlist=${id}&modestbranding=1&playsinline=1&rel=0&iv_load_policy=3&disablekb=1&fs=0&showinfo=0&cc_load_policy=0&start=30`}
+          src={`https://www.youtube-nocookie.com/embed/${id}?autoplay=1&mute=1&controls=0&loop=1&playlist=${id}&modestbranding=1&playsinline=1&rel=0&iv_load_policy=3&disablekb=1&fs=0&showinfo=0&cc_load_policy=0&start=30&enablejsapi=1`}
           allow="autoplay; encrypted-media"
           className={cn("pointer-events-none absolute left-1/2 top-1/2 h-[max(140%,78vw)] w-[max(140%,250vh)] -translate-x-1/2 -translate-y-1/2 transition-opacity duration-1000", ready ? "opacity-100" : "opacity-0")}
         />
