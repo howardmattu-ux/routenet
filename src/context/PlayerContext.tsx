@@ -53,6 +53,8 @@ interface PlayerContextType extends PlayerState {
   toggleShuffle: () => void;
   toggleRepeat: () => void;
   addToQueue: (track: Track) => void;
+  /** Insert a track directly after the current song. */
+  playNext: (track: Track) => void;
   removeFromQueue: (trackId: string) => void;
   setQueue: (tracks: Track[], opts?: { mode?: "radio" | "fixed" }) => void;
   stopVideo: () => void;
@@ -399,6 +401,18 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     setState((prev) => ({ ...prev, queue: [...prev.queue, track] }));
   }, []);
 
+  /** Put a track right after the current song; the rest of the queue continues after it. */
+  const playNext = useCallback((track: Track) => {
+    setState((prev) => {
+      if (!prev.currentTrack) return { ...prev, queue: [track, ...prev.queue.filter((t) => t.id !== track.id)] };
+      if (track.id === prev.currentTrack.id) return prev;
+      const rest = prev.queue.filter((t) => t.id !== track.id);
+      const i = rest.findIndex((t) => t.id === prev.currentTrack?.id);
+      const queue = i === -1 ? [prev.currentTrack, track, ...rest] : [...rest.slice(0, i + 1), track, ...rest.slice(i + 1)];
+      return { ...prev, queue };
+    });
+  }, []);
+
   const removeFromQueue = useCallback((trackId: string) => {
     setState((prev) => ({
       ...prev,
@@ -444,6 +458,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         toggleShuffle,
         toggleRepeat,
         addToQueue,
+        playNext,
         removeFromQueue,
         setQueue,
         stopVideo,
