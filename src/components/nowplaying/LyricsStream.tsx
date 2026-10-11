@@ -4,6 +4,7 @@ import { Loader2, Music2 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { fetchLyrics } from "@/services/lyricsLookup";
 import { cn } from "@/lib/utils";
+import { usePlayer } from "@/context/PlayerContext";
 
 interface LyricLine { time: number; text: string }
 
@@ -50,17 +51,26 @@ export function LyricsStream({ title, artist, album, currentTime, className, onS
   const plain = (data?.lyrics || "").split("\n").filter((l) => l.trim());
   const isStory = !isLoading && !hasSynced && plain.length === 0;
   const story = useMemo(() => storyLines(title, artist, album), [title, artist, album]);
+  const { duration: playerDuration } = usePlayer();
+  const isPlain = !hasSynced && plain.length > 0;
   const activeIndex = useMemo(() => {
     if (isStory) {
       // Ping-pong through the story every 5s: down, then back up.
       const n = story.length, cycle = Math.max(1, 2 * n - 2), step = Math.floor(currentTime / 5) % cycle;
       return step < n ? step : cycle - step;
     }
+    if (isPlain) {
+      // Unsynced lyrics: stretch the lines evenly across the song (skip a short intro/outro).
+      const d = playerDuration > 0 ? playerDuration : 210;
+      const start = d * 0.06, end = d * 0.94;
+      const p = Math.min(1, Math.max(0, (currentTime - start) / (end - start)));
+      return Math.min(plain.length - 1, Math.floor(p * plain.length));
+    }
     if (!lines) return -1;
     let idx = -1;
     for (let i = 0; i < lines.length; i++) { if (lines[i].time <= currentTime) idx = i; else break; }
     return idx;
-  }, [lines, currentTime, isStory, story]);
+  }, [lines, currentTime, isStory, story, isPlain, plain.length, playerDuration]);
 
   useEffect(() => {
     if (synced && activeRef.current) activeRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -75,7 +85,7 @@ export function LyricsStream({ title, artist, album, currentTime, className, onS
   };
 
   const display = hasSynced ? lines! : isStory ? story.map((text, i) => ({ time: i, text })) : plain.map((text, i) => ({ time: i, text }));
-  const highlight = hasSynced || isStory;
+  const highlight = hasSynced || isStory || isPlain;
 
   return (
     <div onDoubleClick={toggleSync} className={cn("relative h-full min-h-0 select-none", className)}>
