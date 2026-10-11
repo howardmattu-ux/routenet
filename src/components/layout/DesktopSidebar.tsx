@@ -29,7 +29,7 @@ export function DesktopSidebar() {
   }, [location.pathname]);
 
   return (
-    <aside className="hidden h-full min-h-0 w-[280px] shrink-0 flex-col gap-2 lg:flex xl:w-[320px]">
+    <aside className="hidden h-full min-h-0 w-[260px] shrink-0 flex-col gap-2 lg:flex xl:w-[280px] 2xl:w-[300px]">
       <div className="shrink-0 rounded-lg bg-background-elevated pb-2">
       <div className="flex h-14 items-center gap-3 px-4">
         <AppLogo className="h-8 w-8 rounded-md" />

@@ -19,7 +19,7 @@ export function DesktopNowPlayingPanel() {
 
   if (panelOpen !== "open") return null;
   return (
-    <aside className="custom-scrollbar hidden h-full min-h-0 w-[280px] shrink-0 overflow-y-auto rounded-md border-0 bg-background-elevated p-4 outline-none xl:block 2xl:w-[300px]">
+    <aside className="custom-scrollbar hidden h-full min-h-0 w-[320px] shrink-0 overflow-y-auto rounded-md border-0 bg-background-elevated p-4 outline-none xl:block 2xl:w-[360px]">
       <div className="mb-3 flex items-center justify-between">
         <h2 className="text-sm font-bold text-foreground">Now playing</h2>
         <div className="flex items-center gap-1">
