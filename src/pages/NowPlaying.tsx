@@ -235,14 +235,14 @@ export default function NowPlaying() {
         </div>
       </header>
 
-      <div className="relative z-10 flex min-h-0 flex-1 flex-col px-6 lg:hidden">
-        <div className="flex min-h-0 flex-1 items-center justify-center py-4">
+      <div className="relative z-10 flex min-h-0 flex-1 flex-col px-6 pb-4 lg:hidden">
+        <div className="flex min-h-0 flex-1 items-center justify-center pb-2 pt-1">
           {!showCanvas ? (
             <motion.div
               key={currentTrack.id}
               initial={{ scale: 0.96, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              className="aspect-square w-full max-w-[min(88vw,46dvh)] overflow-hidden rounded-xl shadow-[0_24px_60px_-14px_hsl(0_0%_0%/0.75)]"
+              className="aspect-square w-full max-w-[min(78vw,38dvh)] overflow-hidden rounded-xl shadow-[0_24px_60px_-14px_hsl(0_0%_0%/0.75)]"
             >
               {isResolving ? (
                 <div className="flex h-full w-full items-center justify-center bg-secondary"><Loader2 className="h-7 w-7 animate-spin text-primary" /></div>
