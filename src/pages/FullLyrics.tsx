@@ -11,6 +11,7 @@ import { usePlayer } from "@/context/PlayerContext";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toTitleCase } from "@/utils/toTitleCase";
+import { VideoCanvas } from "@/components/nowplaying/VideoCanvas";
 import { getDominantColor, gradientFromRGB } from "@/utils/dominantColor";
 
 function useCoverGradient(artwork?: string): string {
@@ -91,7 +92,10 @@ export default function FullLyrics() {
       onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
 
       {/* Full-screen background wash from the album art */}
-      {currentTrack?.artwork && (
+      {currentTrack && localStorage.getItem("routenet_canvas_on") === "1" && (
+        <VideoCanvas trackId={currentTrack.id} artwork={currentTrack.artwork || ""} artist={currentTrack.artist} title={currentTrack.title} className="opacity-70" />
+      )}
+      {currentTrack?.artwork && localStorage.getItem("routenet_canvas_on") !== "1" && (
         <div className="pointer-events-none absolute inset-0 opacity-30 blur-3xl"
           style={{ backgroundImage: `url(${currentTrack.artwork})`, backgroundSize: "cover", backgroundPosition: "center" }} />
       )}

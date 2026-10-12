@@ -9,8 +9,10 @@ document.documentElement.classList.add(savedTheme);
 
 const root = document.getElementById("root");
 import { applyCardStyle } from "./hooks/useUiPrefs";
+import { AppErrorBoundary } from "./components/AppErrorBoundary";
 applyCardStyle();
-if (root) createRoot(root).render(<App />);
+if (root) createRoot(root).render(<AppErrorBoundary><App /></AppErrorBoundary>);
+window.addEventListener("unhandledrejection", (e) => { console.warn("Unhandled:", e.reason); e.preventDefault(); });
 registerAppPwa();
 
 // One-time purge of legacy cached stream URLs and iframe-only blacklist.

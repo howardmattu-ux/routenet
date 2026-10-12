@@ -2,6 +2,7 @@ import { rightPanelPref } from "@/hooks/useUiPrefs";
 import { useState } from "react";
 import { EyeOff, Eye, ListMusic, Maximize2, X } from "lucide-react";
 import { VideoCanvas } from "@/components/nowplaying/VideoCanvas";
+import { AboutArtistCard } from "@/components/nowplaying/AboutArtistCard";
 import { getCachedYouTubeId } from "@/components/player/GlobalAudioPlayer";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -47,17 +48,16 @@ export function DesktopNowPlayingPanel() {
         </div>
       ) : currentTrack ? (
         <>
-          <div className="flex items-center gap-3">
-            <img
-              src={currentTrack.artwork || "/placeholder.svg"}
-              alt={`${currentTrack.title} cover`}
-              className="h-16 w-16 shrink-0 rounded-md object-cover"
-            />
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-bold text-foreground">{currentTrack.title}</p>
-              <p className="truncate text-xs text-muted-foreground">{currentTrack.artist}</p>
-            </div>
+          <img
+            src={currentTrack.artwork || "/placeholder.svg"}
+            alt={`${currentTrack.title} cover`}
+            className="aspect-square w-full rounded-lg object-cover shadow-lg"
+          />
+          <div className="mt-3 min-w-0">
+            <p className="truncate text-xl font-bold text-foreground">{currentTrack.title}</p>
+            <p className="truncate text-sm text-muted-foreground">{currentTrack.artist}</p>
           </div>
+          <AboutArtistCard artist={currentTrack.artist} />
 
           <div className="mt-5 pt-1">
             <div className="mb-2 flex items-center justify-between">
