@@ -41,7 +41,7 @@ export function QuickAccessGrid() {
   if (recentSongs.length === 0) return null;
 
   return (
-    <section className="mb-7 grid grid-cols-2 gap-2 lg:grid-cols-3 xl:grid-cols-4 lg:gap-3">
+    <section className="mb-6 grid grid-cols-2 gap-2 md:grid-cols-3 xl:grid-cols-4 lg:gap-3">
       {recentSongs.map((t) => (
         <Button
           variant="ghost"
