@@ -170,11 +170,18 @@ export function VideoCanvas({ trackId, artwork, artist = "", title = "", enabled
   useEffect(() => { onActiveChange?.(active); }, [active, onActiveChange]);
 
   // Sync script: video pauses/plays with the song and starts at the same point in the song.
-  const { isPlaying } = usePlayer();
+  const { isPlaying, progress, duration } = usePlayer();
   const frameRef = useRef<HTMLIFrameElement>(null);
   const send = (func: string, args: unknown[] = []) =>
     frameRef.current?.contentWindow?.postMessage(JSON.stringify({ event: "command", func, args }), "*");
   useEffect(() => { if (ready) send(isPlaying ? "playVideo" : "pauseVideo"); }, [isPlaying, ready]);
+  // Seek follow: when the song jumps (skip ahead / back), jump the video too.
+  const lastSec = useRef(0);
+  useEffect(() => {
+    const sec = progress * (duration || 0);
+    if (ready && Math.abs(sec - lastSec.current) > 3) send("seekTo", [30 + sec, true]);
+    lastSec.current = sec;
+  }, [progress, duration, ready]);
 
   return (
     <div aria-hidden className={cn("pointer-events-none absolute inset-0 overflow-hidden select-none", className)}>

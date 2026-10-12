@@ -600,13 +600,26 @@ async function buildBatch(seed: Track | null, existing: Track[], limit: number):
 
 /** Build the full session queue for a freshly selected song. */
 export async function buildRadioQueue(seed: Track): Promise<Track[]> {
-  const rest = await buildBatch(seed, [seed], INITIAL_QUEUE_SIZE - 1);
+  let rest = await buildBatch(seed, [seed], INITIAL_QUEUE_SIZE - 1).catch(() => [] as Track[]);
+  // EP / single seeds often have thin catalog data — retry with a cleaned
+  // title, then fall back to general picks so a queue always forms.
+  if (rest.length < 3) {
+    const cleaned = { ...seed, title: seed.title.replace(/\s*[([].*?[)\]]/g, "").replace(/\s+-\s+.*$/, "").trim(), album: undefined } as Track;
+    const retry = await buildBatch(cleaned, [seed, ...rest], INITIAL_QUEUE_SIZE - 1 - rest.length).catch(() => [] as Track[]);
+    rest = [...rest, ...retry];
+  }
+  if (rest.length < 3) {
+    const general = await buildBatch(null, [seed, ...rest], INITIAL_QUEUE_SIZE - 1 - rest.length).catch(() => [] as Track[]);
+    rest = [...rest, ...general];
+  }
   return [seed, ...rest];
 }
 
 /** Append another batch, seeded by what is playing now. */
 export async function expandRadioQueue(currentSeed: Track, queue: Track[]): Promise<Track[]> {
-  return buildBatch(currentSeed, queue, REFILL_BATCH_SIZE);
+  const batch = await buildBatch(currentSeed, queue, REFILL_BATCH_SIZE).catch(() => [] as Track[]);
+  if (batch.length) return batch;
+  return buildBatch(null, queue, REFILL_BATCH_SIZE).catch(() => [] as Track[]);
 }
 
 export function needsRefill(queue: Track[], index: number) {
