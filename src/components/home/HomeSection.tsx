@@ -123,7 +123,7 @@ function HomeSectionImpl({ slot, user, onPlay, hideStreams, excludeIds, onResolv
   }
 
   // Card width: 150px mobile, 180px desktop (Spotify-style)
-  const CARD_W = "w-[150px] md:w-[180px] flex-shrink-0";
+  const CARD_W = "w-[140px] sm:w-[156px] md:w-[176px] lg:w-[188px] flex-shrink-0";
 
   if (slot.layout === "grid") {
     return (
@@ -132,7 +132,7 @@ function HomeSectionImpl({ slot, user, onPlay, hideStreams, excludeIds, onResolv
           <h2 className="text-xl md:text-2xl font-extrabold text-foreground">{title}</h2>
           <button className="text-xs font-semibold text-muted-foreground hover:text-foreground">Show all</button>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 lg:gap-4">
           {isLoading ? (
             Array.from({ length: 6 }).map((_, i) => (
               <div key={i}>
