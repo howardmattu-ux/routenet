@@ -653,7 +653,7 @@ export default function Search() {
           {genres && genres.length > 0 && (
             <section className="px-4 pb-28 pt-2">
               <h2 className="mb-3 text-base font-bold text-foreground">Browse all</h2>
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
                 {genres.filter((g: any) => g.id !== 0).slice(0, 20).map((g: any, i: number) => (
                   <button
                     key={g.id}
@@ -661,7 +661,7 @@ export default function Search() {
                     className="relative h-24 overflow-hidden rounded-lg p-3 text-left"
                     style={{ backgroundColor: `hsl(${(i * 47) % 360} 55% 38%)` }}
                   >
-                    <span className="relative z-10 text-base font-bold text-foreground">{g.name}</span>
+                    <span className="relative z-10 block max-w-[70%] break-words text-base font-bold leading-tight text-foreground">{g.name}</span>
                     {g.picture_medium && (
                       <img src={g.picture_medium} alt="" loading="lazy" className="absolute -bottom-1 -right-4 h-16 w-16 rotate-[25deg] rounded shadow-lg" />
                     )}
