@@ -39,9 +39,9 @@ export function MiniPlayer() {
         exit={{ y: 60, opacity: 0 }}
         className="fixed bottom-14 left-0 right-0 z-40 px-2 pb-1"
       >
-        <div onClick={handleClick} className="relative mx-auto flex min-h-[52px] max-w-xl cursor-pointer items-center gap-2 overflow-hidden rounded-lg bg-popover px-2 pb-1 pt-2 shadow-elevated">
+        <div onClick={handleClick} className="relative mx-auto flex min-h-[56px] max-w-xl cursor-pointer items-center gap-2.5 overflow-hidden rounded-md bg-popover px-2 py-2 shadow-elevated">
           <div
-            className="absolute inset-x-2.5 top-0 flex h-3 cursor-pointer items-center"
+            className="absolute inset-x-2 bottom-0 flex h-2 cursor-pointer items-center"
             onPointerDown={handleSeek}
             role="slider"
             aria-label="Seek"
@@ -56,7 +56,7 @@ export function MiniPlayer() {
             </div>
           </div>
 
-          <div className="relative h-8 w-8 flex-shrink-0 overflow-hidden rounded-[3px] bg-secondary">
+          <div className="relative h-10 w-10 flex-shrink-0 overflow-hidden rounded bg-secondary">
             {currentTrack && !isVideoMode ? <TrackArtwork track={currentTrack} alt={title} className="h-full w-full" loading="eager" /> : <img src={artwork} alt={title} className="h-full w-full object-cover" />}
             {isResolving && (
               <div className="absolute inset-0 flex items-center justify-center bg-black/40">
@@ -71,8 +71,8 @@ export function MiniPlayer() {
           </div>
 
           <div className="min-w-0 flex-1 pr-1">
-            <p className="truncate text-[10px] font-semibold leading-tight text-foreground">{title}</p>
-            <p className="mt-0.5 truncate text-[8px] leading-tight text-muted-foreground">
+            <p className="truncate text-[13px] font-semibold leading-tight text-foreground">{title}</p>
+            <p className="mt-0.5 truncate text-[11px] leading-tight text-muted-foreground">
               {isResolving ? "Loading" : subtitle}
             </p>
           </div>

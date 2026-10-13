@@ -16,3 +16,7 @@
 - [x] Artwork by default, "Switch to video" on phone and desktop with smooth slide
 - [x] Smarter lyrics finder (strips instrumental/edit tags) + song-story fallback
 - [x] Phone player spacing, always-visible volume, fuller 3-dots menu
+- [x] Spotify green colors, green logo, Spotify-sized phone bottom player
+- [x] Remove crash screen (silent recovery instead)
+- [x] Onboarding: small 4-across genre, artist, sub-genre cards
+- [ ] Phone Home + Search layouts and full desktop match to Spotify reference page
