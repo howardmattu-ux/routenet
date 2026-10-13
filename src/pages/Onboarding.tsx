@@ -698,10 +698,10 @@ export default function Onboarding() {
                           key={a.id}
                           whileTap={{ scale: 0.97 }}
                           onClick={() => toggleArtist(a)}
-                          className="flex flex-col items-center gap-2 text-center"
+                          className="flex flex-col items-center gap-1 text-center"
                         >
                           <div
-                            className={`relative aspect-square w-full overflow-hidden rounded-lg border transition-all ${
+                            className={`relative aspect-square w-full overflow-hidden rounded-full border transition-all ${
                               active ? "border-primary ring-2 ring-primary/40 shadow-[0_16px_34px_rgba(29,185,84,0.14)]" : "border-white/10"
                             }`}
                           >
@@ -716,7 +716,7 @@ export default function Onboarding() {
                               </div>
                             )}
                           </div>
-                          <span className="line-clamp-2 w-full text-[11px] font-semibold leading-tight text-foreground/90">
+                          <span className="line-clamp-2 w-full text-[10px] font-semibold leading-tight text-foreground/90">
                             {a.name}
                           </span>
                         </motion.button>
@@ -757,10 +757,10 @@ export default function Onboarding() {
                             key={a.id}
                             whileTap={{ scale: 0.97 }}
                             onClick={() => toggleArtist(a)}
-                            className="flex flex-col items-center gap-2 text-center"
+                            className="flex flex-col items-center gap-1 text-center"
                           >
                             <div
-                              className={`relative aspect-square w-full overflow-hidden rounded-lg border transition-all ${
+                              className={`relative aspect-square w-full overflow-hidden rounded-full border transition-all ${
                                 active ? "border-primary ring-2 ring-primary/40 shadow-[0_16px_34px_rgba(29,185,84,0.14)]" : "border-white/10"
                               }`}
                             >
@@ -773,7 +773,7 @@ export default function Onboarding() {
                                 </div>
                               )}
                             </div>
-                            <span className="line-clamp-2 w-full text-[11px] font-semibold leading-tight text-foreground/90">
+                            <span className="line-clamp-2 w-full text-[10px] font-semibold leading-tight text-foreground/90">
                               {a.name}
                             </span>
                           </motion.button>
