@@ -158,19 +158,10 @@ export default function Home() {
   return (
     <div ref={scrollRef} className="custom-scrollbar relative min-h-screen overflow-y-auto pb-28 lg:min-h-0 lg:pb-8">
       <header className="sticky top-0 z-30 bg-background/80 backdrop-blur-xl lg:bg-background-elevated/90">
-        <div className="px-4 pb-3 pt-4 lg:px-7 lg:pb-4 lg:pt-3">
+        <div className="px-4 pb-3 pt-9 lg:px-7 lg:pb-4 lg:pt-3">
           <div className="flex items-center justify-between gap-3">
-            <div className="flex min-w-0 items-center gap-2">
-              <button
-                onClick={() => navigate("/profile")}
-                aria-label="Profile"
-                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground lg:hidden"
-              >
-                {getDisplayName().charAt(0).toUpperCase()}
-              </button>
-              <HomeFilterPills value={filter} onChange={setFilter} />
-            </div>
-            <div className="hidden lg:block"><CardStyleToggle /></div>
+            <HomeFilterPills value={filter} onChange={setFilter} />
+            <CardStyleToggle />
           </div>
         </div>
       </header>

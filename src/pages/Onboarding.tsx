@@ -529,7 +529,7 @@ export default function Onboarding() {
                 <div className="mt-10 w-full space-y-3">
                   <button
                     onClick={() => goto("genres")}
-                    className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-primary text-sm font-semibold text-primary-foreground shadow-[0_14px_32px_rgba(29,185,84,0.32)] transition-transform hover:scale-[1.01] active:scale-95"
+                    className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-primary text-sm font-semibold text-primary-foreground shadow-[0_14px_32px_rgba(244,63,94,0.32)] transition-transform hover:scale-[1.01] active:scale-95"
                   >
                     Get Started <ArrowRight className="h-4 w-4" />
                   </button>
@@ -565,7 +565,7 @@ export default function Onboarding() {
                   Pick the genres that shape how you listen, then we’ll build a feed around them.
                 </p>
 
-                <div className="mt-6 grid flex-1 content-start grid-cols-4 gap-2 overflow-y-auto pb-2 pr-1 md:grid-cols-6">
+                <div className="mt-6 grid flex-1 grid-cols-2 gap-3 overflow-y-auto pb-2 pr-1 md:grid-cols-4">
                   {GENRES.map((g) => {
                     const active = selectedGenres.some((x) => x.id === g.id);
                     return (
@@ -573,23 +573,23 @@ export default function Onboarding() {
                         key={g.id}
                         whileTap={{ scale: 0.98 }}
                         onClick={() => toggleGenre(g)}
-                        className={`group relative h-16 overflow-hidden rounded-lg border bg-gradient-to-br ${g.gradient} p-1.5 text-left text-[10px] leading-tight shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] transition-all duration-200 ${
+                        className={`group relative h-28 overflow-hidden rounded-[22px] border bg-gradient-to-br ${g.gradient} p-3 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] transition-all duration-200 ${
                           active
-                            ? "border-primary/60 ring-2 ring-primary/40 shadow-[0_18px_40px_rgba(29,185,84,0.18)]"
+                            ? "border-primary/60 ring-2 ring-primary/40 shadow-[0_18px_40px_rgba(244,63,94,0.18)]"
                             : "border-white/10 hover:border-white/20 hover:translate-y-[-1px]"
                         }`}
                       >
                         <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.05),rgba(0,0,0,0.52))]" />
                         <div className="relative z-10 flex h-full flex-col justify-between">
-                          <span className="truncate text-[11px] font-black leading-tight text-white drop-shadow-sm md:text-sm">
+                          <span className="text-base font-black tracking-tight text-white drop-shadow-sm md:text-lg">
                             {g.name}
                           </span>
-                          <span className="text-[7px] font-medium uppercase tracking-wider text-white/70">
+                          <span className="text-[10px] font-medium uppercase tracking-[0.16em] text-white/75">
                             {active ? "Selected" : "Discover"}
                           </span>
                         </div>
                         {active && (
-                          <span className="absolute right-1 top-1 z-10 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/30">
+                          <span className="absolute right-3 top-3 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/30">
                             <Check className="h-4 w-4" />
                           </span>
                         )}
@@ -633,9 +633,9 @@ export default function Onboarding() {
                           key={s}
                           whileTap={{ scale: 0.96 }}
                           onClick={() => toggleSubgenre(s)}
-                          className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold transition-all ${
+                          className={`rounded-full border px-4 py-2 text-sm font-semibold transition-all ${
                             active
-                              ? "border-primary bg-primary text-primary-foreground shadow-[0_8px_18px_rgba(29,185,84,0.28)]"
+                              ? "border-primary bg-primary text-primary-foreground shadow-[0_8px_18px_rgba(244,63,94,0.28)]"
                               : "border-white/10 bg-secondary/50 text-foreground hover:border-primary/40 hover:text-white"
                           }`}
                         >
@@ -674,10 +674,10 @@ export default function Onboarding() {
                   }}
                 />
 
-                <div className="mt-4 grid flex-1 content-start grid-cols-4 gap-2 overflow-y-auto pb-2 pr-1 md:grid-cols-6">
+                <div className="mt-4 grid flex-1 grid-cols-2 gap-3 overflow-y-auto pb-2 pr-1 md:grid-cols-4">
                   {loadingArtists ? (
                     Array.from({ length: 12 }).map((_, i) => (
-                      <div key={i} className="shimmer aspect-[0.9] rounded-lg bg-muted/40" />
+                      <div key={i} className="shimmer aspect-[0.9] rounded-[22px] bg-muted/40" />
                     ))
                   ) : artistsError || artists.length === 0 ? (
                     <div className="col-span-full flex flex-col items-center justify-center rounded-2xl border border-dashed border-border/60 bg-secondary/20 p-6 text-center">
@@ -698,11 +698,11 @@ export default function Onboarding() {
                           key={a.id}
                           whileTap={{ scale: 0.97 }}
                           onClick={() => toggleArtist(a)}
-                          className="flex flex-col items-center gap-1 text-center"
+                          className="flex flex-col items-center gap-2 text-center"
                         >
                           <div
-                            className={`relative aspect-square w-full overflow-hidden rounded-full border transition-all ${
-                              active ? "border-primary ring-2 ring-primary/40 shadow-[0_16px_34px_rgba(29,185,84,0.14)]" : "border-white/10"
+                            className={`relative aspect-square w-full overflow-hidden rounded-[22px] border transition-all ${
+                              active ? "border-primary ring-2 ring-primary/40 shadow-[0_16px_34px_rgba(244,63,94,0.14)]" : "border-white/10"
                             }`}
                           >
                             {a.picture ? (
@@ -716,7 +716,7 @@ export default function Onboarding() {
                               </div>
                             )}
                           </div>
-                          <span className="line-clamp-2 w-full text-[10px] font-semibold leading-tight text-foreground/90">
+                          <span className="line-clamp-2 w-full text-[11px] font-semibold leading-tight text-foreground/90">
                             {a.name}
                           </span>
                         </motion.button>
@@ -745,10 +745,10 @@ export default function Onboarding() {
                   Add a few more artists to tighten the recommendations.
                 </p>
 
-                <div className="mt-6 grid flex-1 content-start grid-cols-4 gap-2 overflow-y-auto pb-2 pr-1 md:grid-cols-6">
+                <div className="mt-6 grid flex-1 grid-cols-2 gap-3 overflow-y-auto pb-2 pr-1 md:grid-cols-4">
                   {loadingSimilar
                     ? Array.from({ length: 8 }).map((_, i) => (
-                        <div key={i} className="shimmer aspect-[0.92] rounded-lg bg-muted/40" />
+                        <div key={i} className="shimmer aspect-[0.92] rounded-[22px] bg-muted/40" />
                       ))
                     : similarArtists.map((a) => {
                         const active = selectedArtists.some((x) => x.id === a.id);
@@ -757,11 +757,11 @@ export default function Onboarding() {
                             key={a.id}
                             whileTap={{ scale: 0.97 }}
                             onClick={() => toggleArtist(a)}
-                            className="flex flex-col items-center gap-1 text-center"
+                            className="flex flex-col items-center gap-2 text-center"
                           >
                             <div
-                              className={`relative aspect-square w-full overflow-hidden rounded-full border transition-all ${
-                                active ? "border-primary ring-2 ring-primary/40 shadow-[0_16px_34px_rgba(29,185,84,0.14)]" : "border-white/10"
+                              className={`relative aspect-square w-full overflow-hidden rounded-[22px] border transition-all ${
+                                active ? "border-primary ring-2 ring-primary/40 shadow-[0_16px_34px_rgba(244,63,94,0.14)]" : "border-white/10"
                               }`}
                             >
                               {a.picture && (
@@ -773,7 +773,7 @@ export default function Onboarding() {
                                 </div>
                               )}
                             </div>
-                            <span className="line-clamp-2 w-full text-[10px] font-semibold leading-tight text-foreground/90">
+                            <span className="line-clamp-2 w-full text-[11px] font-semibold leading-tight text-foreground/90">
                               {a.name}
                             </span>
                           </motion.button>
@@ -854,7 +854,7 @@ export default function Onboarding() {
                   Pick the vibe you want to hear right now and let the rest of the day follow.
                 </p>
 
-                <div className="mt-6 grid flex-1 content-start grid-cols-4 gap-2 overflow-y-auto pb-2 pr-1 md:grid-cols-6">
+                <div className="mt-6 grid flex-1 grid-cols-2 gap-3 overflow-y-auto pb-2 pr-1 md:grid-cols-4">
                   {MOODS.map((m) => {
                     const active = selectedMoods.includes(m.name);
                     return (
@@ -862,15 +862,15 @@ export default function Onboarding() {
                         key={m.name}
                         whileTap={{ scale: 0.98 }}
                         onClick={() => toggleMood(m.name)}
-                        className={`relative h-16 overflow-hidden rounded-lg border bg-gradient-to-br ${m.gradient} p-1.5 text-left text-[10px] leading-tight shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] transition-all ${
+                        className={`relative h-28 overflow-hidden rounded-[22px] border bg-gradient-to-br ${m.gradient} p-3 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] transition-all ${
                           active
-                            ? "border-primary/60 ring-2 ring-primary/40 shadow-[0_18px_40px_rgba(29,185,84,0.18)]"
+                            ? "border-primary/60 ring-2 ring-primary/40 shadow-[0_18px_40px_rgba(244,63,94,0.18)]"
                             : "border-white/10 hover:border-white/20 hover:translate-y-[-1px]"
                         }`}
                       >
                         <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.04),rgba(0,0,0,0.48))]" />
                         <div className="relative z-10 flex h-full flex-col justify-between">
-                          <span className="truncate text-[11px] font-black leading-tight text-white drop-shadow-sm md:text-sm">
+                          <span className="text-base font-black tracking-tight text-white drop-shadow-sm md:text-lg">
                             {m.name}
                           </span>
                           <span className="text-[10px] font-medium uppercase tracking-[0.16em] text-white/70">
@@ -878,7 +878,7 @@ export default function Onboarding() {
                           </span>
                         </div>
                         {active && (
-                          <span className="absolute right-1 top-1 z-10 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/20">
+                          <span className="absolute right-3 top-3 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/20">
                             <Check className="h-4 w-4" />
                           </span>
                         )}
@@ -902,7 +902,7 @@ export default function Onboarding() {
                   initial={{ scale: 0.5, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
                   transition={{ type: "spring", damping: 12 }}
-                  className="mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-primary via-primary/90 to-[#2b4b3b] shadow-[0_20px_50px_rgba(29,185,84,0.28)]"
+                  className="mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-primary via-primary/90 to-[#2b4b3b] shadow-[0_20px_50px_rgba(244,63,94,0.28)]"
                 >
                   <Sparkles className="h-10 w-10 text-white" />
                 </motion.div>
@@ -913,7 +913,7 @@ export default function Onboarding() {
                 </p>
                 <button
                   onClick={finish}
-                  className="mt-10 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-primary text-sm font-semibold text-primary-foreground shadow-[0_14px_32px_rgba(29,185,84,0.28)]"
+                  className="mt-10 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-primary text-sm font-semibold text-primary-foreground shadow-[0_14px_32px_rgba(244,63,94,0.28)]"
                 >
                   Start Listening <ArrowRight className="h-4 w-4" />
                 </button>

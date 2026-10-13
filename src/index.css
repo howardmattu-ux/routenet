@@ -7,58 +7,58 @@
 
 @layer base {
   :root {
-    /* Spotify-matched neutral canvas */
-    --background: 0 0% 7%;
-    --background-elevated: 0 0% 9%;
-    --background-card: 0 0% 12%;
+    /* Neutral canvas */
+    --background: 240 28% 5%;
+    --background-elevated: 244 26% 9%;
+    --background-card: 246 22% 13%;
     --foreground: 0 0% 100%;
 
-    --card: 0 0% 11%;
+    --card: 246 22% 12%;
     --card-foreground: 0 0% 100%;
 
-    --popover: 0 0% 16%;
+    --popover: 246 20% 16%;
     --popover-foreground: 0 0% 100%;
 
-    /* Primary — Spotify green */
-    --primary: 141 73% 42%;
-    --primary-foreground: 0 0% 0%;
-    --primary-glow: 141 76% 48%;
+    /* Primary — Routenet red */
+    --primary: 357 82% 54%;
+    --primary-foreground: 0 0% 100%;
+    --primary-glow: 357 88% 62%;
 
-    --accent: 141 73% 42%;
-    --accent-foreground: 0 0% 0%;
+    --accent: 357 82% 54%;
+    --accent-foreground: 0 0% 100%;
 
-    --secondary: 0 0% 16%;
+    --secondary: 246 20% 15%;
     --secondary-foreground: 0 0% 100%;
 
-    --muted: 0 0% 16%;
-    --muted-foreground: 0 0% 70%;
+    --muted: 246 18% 17%;
+    --muted-foreground: 240 10% 70%;
 
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 0 0% 16%;
-    --input: 0 0% 18%;
-    --ring: 141 73% 42%;
+    --border: 246 18% 18%;
+    --input: 246 18% 18%;
+    --ring: 0 84% 55%;
 
     --radius: 0.5rem;
 
-    --gradient-bg: linear-gradient(180deg, hsl(0 0% 9%) 0%, hsl(0 0% 7%) 360px, hsl(0 0% 6%) 100%);
-    --gradient-card: linear-gradient(160deg, hsl(0 0% 15%) 0%, hsl(0 0% 11%) 100%);
-    --gradient-primary: linear-gradient(135deg, hsl(141 73% 42%) 0%, hsl(141 76% 50%) 100%);
-    --gradient-hero: linear-gradient(180deg, hsl(141 40% 22% / 0.45) 0%, hsl(0 0% 7%) 78%);
+    --gradient-bg: linear-gradient(180deg, hsl(250 35% 14%) 0%, hsl(244 28% 8%) 360px, hsl(240 28% 6%) 100%);
+    --gradient-card: linear-gradient(160deg, hsl(248 22% 17%) 0%, hsl(246 22% 12%) 100%);
+    --gradient-primary: linear-gradient(135deg, hsl(0 84% 50%) 0%, hsl(0 88% 62%) 100%);
+    --gradient-hero: linear-gradient(180deg, hsl(255 40% 24% / 0.55) 0%, hsl(244 28% 8%) 78%);
 
-    --shadow-glow: 0 4px 20px hsl(141 60% 25% / 0.35);
+    --shadow-glow: 0 4px 20px hsl(0 65% 25% / 0.35);
     --shadow-card: 0 8px 24px hsl(0 0% 0% / 0.5);
     --shadow-elevated: 0 16px 40px hsl(0 0% 0% / 0.6);
 
-    --sidebar-background: 0 0% 7%;
+    --sidebar-background: 244 28% 7%;
     --sidebar-foreground: 0 0% 90%;
-    --sidebar-primary: 141 73% 42%;
-    --sidebar-primary-foreground: 0 0% 0%;
-    --sidebar-accent: 0 0% 16%;
+    --sidebar-primary: 0 84% 55%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 246 20% 15%;
     --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 0 0% 16%;
-    --sidebar-ring: 141 73% 42%;
+    --sidebar-border: 246 18% 18%;
+    --sidebar-ring: 0 84% 55%;
   }
 
 
@@ -131,7 +131,7 @@
   .scrollbar-hide::-webkit-scrollbar { display: none; }
 
   .hero-gradient {
-    background: linear-gradient(180deg, hsl(141 35% 20% / 0.4) 0%, hsl(0 0% 8% / 0.6) 55%, transparent 100%);
+    background: linear-gradient(180deg, hsl(0 45% 24% / 0.4) 0%, hsl(0 0% 8% / 0.6) 55%, transparent 100%);
   }
   .neon-card {
     background: var(--gradient-card);
