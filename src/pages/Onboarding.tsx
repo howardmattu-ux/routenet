@@ -633,7 +633,7 @@ export default function Onboarding() {
                           key={s}
                           whileTap={{ scale: 0.96 }}
                           onClick={() => toggleSubgenre(s)}
-                          className={`rounded-full border px-4 py-2 text-sm font-semibold transition-all ${
+                          className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold transition-all ${
                             active
                               ? "border-primary bg-primary text-primary-foreground shadow-[0_8px_18px_rgba(29,185,84,0.28)]"
                               : "border-white/10 bg-secondary/50 text-foreground hover:border-primary/40 hover:text-white"
