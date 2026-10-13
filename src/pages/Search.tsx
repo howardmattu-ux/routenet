@@ -429,9 +429,10 @@ export default function Search() {
       <motion.header
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="sticky top-0 z-30 border-b border-white/10 bg-background/85 px-3 pt-3 pb-3 backdrop-blur-xl"
+        className="sticky top-0 z-30 bg-background/90 px-4 pt-4 pb-3 backdrop-blur-xl"
       >
-        <div className="rounded-[26px] border border-white/10 bg-card/60 p-2 shadow-[0_12px_30px_rgba(0,0,0,0.18)]">
+        {!hasQuery && <h1 className="mb-3 text-2xl font-extrabold text-foreground lg:hidden">Search</h1>}
+        <div className="rounded-full bg-card p-1.5 ring-1 ring-border/40 focus-within:ring-2 focus-within:ring-foreground">
           <div className="flex items-center gap-3">
             <button
               aria-label="Go back"
@@ -647,7 +648,29 @@ export default function Search() {
           )}
         </div>
       ) : (
-        <RecentSearches setQuery={setQuery} />
+        <>
+          <RecentSearches setQuery={setQuery} />
+          {genres && genres.length > 0 && (
+            <section className="px-4 pb-28 pt-2">
+              <h2 className="mb-3 text-base font-bold text-foreground">Browse all</h2>
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
+                {genres.filter((g: any) => g.id !== 0).slice(0, 20).map((g: any, i: number) => (
+                  <button
+                    key={g.id}
+                    onClick={() => setQuery(g.name)}
+                    className="relative h-24 overflow-hidden rounded-lg p-3 text-left"
+                    style={{ backgroundColor: `hsl(${(i * 47) % 360} 55% 38%)` }}
+                  >
+                    <span className="relative z-10 block max-w-[70%] break-words text-base font-bold leading-tight text-foreground">{g.name}</span>
+                    {g.picture_medium && (
+                      <img src={g.picture_medium} alt="" loading="lazy" className="absolute -bottom-1 -right-4 h-16 w-16 rotate-[25deg] rounded shadow-lg" />
+                    )}
+                  </button>
+                ))}
+              </div>
+            </section>
+          )}
+        </>
       )}
       </div>
       <AddToPlaylistDialog
