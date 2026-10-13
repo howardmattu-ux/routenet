@@ -581,15 +581,15 @@ export default function Onboarding() {
                       >
                         <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.05),rgba(0,0,0,0.52))]" />
                         <div className="relative z-10 flex h-full flex-col justify-between">
-                          <span className="text-base font-black tracking-tight text-white drop-shadow-sm md:text-lg">
+                          <span className="truncate text-[11px] font-black leading-tight text-white drop-shadow-sm md:text-sm">
                             {g.name}
                           </span>
-                          <span className="text-[10px] font-medium uppercase tracking-[0.16em] text-white/75">
+                          <span className="text-[7px] font-medium uppercase tracking-wider text-white/70">
                             {active ? "Selected" : "Discover"}
                           </span>
                         </div>
                         {active && (
-                          <span className="absolute right-3 top-3 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/30">
+                          <span className="absolute right-1 top-1 z-10 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/30">
                             <Check className="h-4 w-4" />
                           </span>
                         )}
@@ -870,7 +870,7 @@ export default function Onboarding() {
                       >
                         <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.04),rgba(0,0,0,0.48))]" />
                         <div className="relative z-10 flex h-full flex-col justify-between">
-                          <span className="text-base font-black tracking-tight text-white drop-shadow-sm md:text-lg">
+                          <span className="truncate text-[11px] font-black leading-tight text-white drop-shadow-sm md:text-sm">
                             {m.name}
                           </span>
                           <span className="text-[10px] font-medium uppercase tracking-[0.16em] text-white/70">
@@ -878,7 +878,7 @@ export default function Onboarding() {
                           </span>
                         </div>
                         {active && (
-                          <span className="absolute right-3 top-3 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/20">
+                          <span className="absolute right-1 top-1 z-10 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/20">
                             <Check className="h-4 w-4" />
                           </span>
                         )}
