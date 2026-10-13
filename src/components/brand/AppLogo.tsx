@@ -12,7 +12,7 @@ export function AppLogo({ className, imageClassName, alt = "Routenet logo" }: Ap
       <img
         src="/logo.png"
         alt={alt}
-        className={cn("h-full w-full object-contain", imageClassName)}
+        className={cn("h-full w-full object-contain [filter:hue-rotate(144deg)_saturate(1.1)]", imageClassName)}
         loading="eager"
         decoding="async"
       />
