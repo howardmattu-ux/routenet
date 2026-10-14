@@ -555,7 +555,7 @@ export default function Search() {
                           playTrack(t, filteredTracks);
                         }}>
                         <div className="relative h-[52px] w-[52px] shrink-0 overflow-hidden rounded-[3px] bg-muted/30">
-                          <img src={t.artwork} alt="" loading="lazy" className="h-full w-full object-cover" />
+                          <img src={t.artwork || ytThumbFor(t) || "/placeholder.svg"} alt="" loading="lazy" onError={(e) => { const y = ytThumbFor(t); const img = e.currentTarget; if (y && img.src !== y) img.src = y; else if (!img.src.endsWith("/placeholder.svg")) img.src = "/placeholder.svg"; }} className="h-full w-full object-cover" />
                           <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
                             <Play className="h-5 w-5 text-white" fill="currentColor" />
                           </div>

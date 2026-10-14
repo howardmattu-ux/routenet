@@ -16,3 +16,7 @@
 - [x] Artwork by default, "Switch to video" on phone and desktop with smooth slide
 - [x] Smarter lyrics finder (strips instrumental/edit tags) + song-story fallback
 - [x] Phone player spacing, always-visible volume, fuller 3-dots menu
+- [x] Kenyan scene lock (KE seeds get only Kenyan artists; rap untouched)
+- [x] Crash guard for failed lookups; YouTube artwork fallback + duplicate-artist cleanup in Search
+- [x] Unsynced lyrics scroll as one smooth sheet
+- [x] Spotify-style desktop top bar (logo, round Home, pill search) + Home pills/tiles
