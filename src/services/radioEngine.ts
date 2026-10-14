@@ -23,6 +23,7 @@ import { getLikedSongs, getRecentlyPlayed } from "@/services/fallbackRecommendat
 import { isRecentlyRecommended, rememberRecommended } from "@/services/recommendedSongs";
 import { getUserPlaylists, getPlaylistTracks } from "@/services/playlistService";
 import { getRecommendations, type CatalogCandidate } from "@/services/catalogRecommend";
+import { isKenyanSeed } from "@/services/sceneLock";
 
 
 
@@ -608,7 +609,8 @@ export async function buildRadioQueue(seed: Track): Promise<Track[]> {
     const retry = await buildBatch(cleaned, [seed, ...rest], INITIAL_QUEUE_SIZE - 1 - rest.length).catch(() => [] as Track[]);
     rest = [...rest, ...retry];
   }
-  if (rest.length < 3) {
+  // Kenyan seeds never fall back to general charts (keeps the scene pure).
+  if (rest.length < 3 && !isKenyanSeed(seed)) {
     const general = await buildBatch(null, [seed, ...rest], INITIAL_QUEUE_SIZE - 1 - rest.length).catch(() => [] as Track[]);
     rest = [...rest, ...general];
   }
@@ -618,7 +620,7 @@ export async function buildRadioQueue(seed: Track): Promise<Track[]> {
 /** Append another batch, seeded by what is playing now. */
 export async function expandRadioQueue(currentSeed: Track, queue: Track[]): Promise<Track[]> {
   const batch = await buildBatch(currentSeed, queue, REFILL_BATCH_SIZE).catch(() => [] as Track[]);
-  if (batch.length) return batch;
+  if (batch.length || isKenyanSeed(currentSeed)) return batch;
   return buildBatch(null, queue, REFILL_BATCH_SIZE).catch(() => [] as Track[]);
 }
 

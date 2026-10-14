@@ -29,54 +29,31 @@ export function DesktopSidebar() {
   }, [location.pathname]);
 
   return (
-    <aside className="hidden h-full min-h-0 w-[260px] shrink-0 flex-col gap-2 lg:flex xl:w-[280px] 2xl:w-[300px]">
-      <div className="shrink-0 rounded-lg bg-background-elevated pb-2">
-      <div className="flex h-14 items-center gap-3 px-4">
-        <AppLogo className="h-8 w-8 rounded-md" />
-        <span className="text-lg font-black text-sidebar-foreground">routenet</span>
-      </div>
-
-      <nav className="space-y-0.5 px-2 py-2" aria-label="Main navigation">
-        {primary.map(({ path, label, icon: Icon }) => (
-          <NavLink
-            key={path}
-            to={path}
-            className={cn(
-              "flex h-11 items-center gap-4 rounded-md px-3 text-[15px] font-bold transition-colors",
-              location.pathname === path
-                ? "text-foreground"
-                : "text-muted-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-foreground",
-            )}
-          >
-            <Icon className="h-6 w-6" />
-            {label}
-          </NavLink>
-        ))}
-      </nav>
-      </div>
-
+    <aside className="hidden h-full min-h-0 w-[260px] shrink-0 flex-col lg:flex xl:w-[280px] 2xl:w-[300px]">
       <div className="custom-scrollbar min-h-0 flex-1 overflow-y-auto rounded-lg bg-background-elevated px-2 pb-6 pt-3">
-        <div className="mb-2 flex items-center justify-between px-2">
-          <span className="flex items-center gap-3 text-[15px] font-bold text-muted-foreground hover:text-foreground"><Library className="h-6 w-6" /> Your Library</span>
-          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => navigate("/create-playlist")} aria-label="Create playlist">
+        <div className="mb-3 flex items-center justify-between px-2">
+          <NavLink to="/library" className="flex items-center gap-3 text-[15px] font-bold text-foreground"><Library className="h-6 w-6" /> Your Library</NavLink>
+          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full bg-secondary" onClick={() => navigate("/create-playlist")} aria-label="Create playlist">
             <Plus className="h-4 w-4" />
           </Button>
         </div>
         <div className="mb-3 flex gap-2 px-2">
-          {[{ l: "Playlists", p: "/library" }, { l: "Liked", p: "/liked" }, { l: "Recent", p: "/recently-played" }].map((c) => (
-            <button key={c.l} onClick={() => navigate(c.p)} className="rounded-full bg-secondary px-3 py-1 text-[13px] font-semibold text-foreground transition-colors hover:bg-secondary/70">{c.l}</button>
+          {[{ l: "Playlists", p: "/library" }, { l: "By you", p: "/recently-played" }].map((c, i) => (
+            <button key={c.l} onClick={() => navigate(c.p)} className={cn("rounded-full px-3 py-1.5 text-[13px] font-semibold transition-colors", i === 0 ? "bg-foreground text-background" : "bg-secondary text-foreground hover:bg-muted")}>{c.l}</button>
           ))}
         </div>
-        {[
-          { path: "/library", label: "Library", icon: Library },
-          { path: "/liked", label: "Liked Songs", icon: Heart },
-          { path: "/recently-played", label: "Recently Played", icon: Clock3 },
-        ].map(({ path, label, icon: Icon }) => (
-          <NavLink key={path} to={path} className="flex h-9 items-center gap-3 rounded-md px-2 text-sm text-muted-foreground transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-foreground">
-            <Icon className="h-4 w-4" />
-            {label}
-          </NavLink>
-        ))}
+        <div className="mb-2 flex items-center justify-between px-2 text-muted-foreground">
+          <Search className="h-4 w-4" />
+          <span className="flex items-center gap-1.5 text-[13px]">Recents <Clock3 className="h-3.5 w-3.5" /></span>
+        </div>
+        <button onClick={() => navigate("/liked")} className="flex w-full items-center gap-3 rounded-md px-2 py-1.5 text-left transition-colors hover:bg-sidebar-accent/60">
+          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded bg-gradient-to-br from-accent to-primary"><Heart className="h-5 w-5 text-primary-foreground" fill="currentColor" /></span>
+          <span className="min-w-0">
+            <span className="block truncate text-[15px] font-semibold text-sidebar-foreground">Liked Songs</span>
+            <span className="block text-[13px] text-muted-foreground">Playlist • {liked.length} songs</span>
+          </span>
+        </button>
+
 
         {playlists.length > 0 && (
           <div className="mt-4">

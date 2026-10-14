@@ -14,6 +14,7 @@
  *   - older albums of related artists          -> "classic" / "hidden"
  */
 import { supabase } from "@/integrations/supabase/client";
+import { isKenyanSeed, keepKenyanOnly, KENYAN_SCENE } from "@/services/sceneLock";
 
 export interface CatalogCandidate {
   title: string;
@@ -192,11 +193,33 @@ export async function getRecommendations(
     );
   });
 
+  // Kenyan scene: pull more scene artists and keep ONLY scene artists
+  // (no Afrobeats, Bongo or Rhumba). Every other genre skips this.
+  let pool = out;
+  if (isKenyanSeed(seed)) {
+    const roster = KENYAN_SCENE.slice().sort(() => Math.random() - 0.5).slice(0, 14);
+    const extra = await Promise.all(
+      roster.map(async (name) => {
+        const a = rows(await dz("searchArtist", { name, limit: 1 }))[0];
+        if (!a?.id) return [];
+        const [top, albums] = await Promise.all([
+          dz("getArtistTopTracks", { artistId: a.id, limit: 6 }),
+          dz("getArtistAlbums", { artistId: a.id, limit: 6 }),
+        ]);
+        const fresh = freshAlbums(rows(albums), 1);
+        const freshTracks = fresh.length ? rows(await dz("getAlbumTracks", { albumId: fresh[0].id, limit: 4 })).map((t: any) => ({ t, album: fresh[0] })) : [];
+        return [...freshTracks.map(({ t, album }: any) => toCandidate(t, "recent", { album, releaseDate: album.release_date })), ...rows(top).map((t: any) => toCandidate(t, "related"))];
+      }),
+    );
+    extra.flat().forEach(push);
+    pool = keepKenyanOnly(out);
+  }
+
   // Sort so the strongest material leads; the queue builder reorders anyway.
-  out.sort((a, b) => {
+  pool.sort((a, b) => {
     if (a.freshness !== b.freshness) return a.freshness === "current" ? -1 : 1;
     return b.rank - a.rank;
   });
 
-  return out.slice(0, Math.max(140, count * 3));
+  return pool.slice(0, Math.max(140, count * 3));
 }
