@@ -204,7 +204,7 @@ export async function searchMusicBrainz(type: 'artist' | 'release' | 'recording'
   const { data, error } = await supabase.functions.invoke('musicbrainz', {
     body: { action: 'search', params: { type, query, limit } }
   });
-  if (error) throw error;
+  if (error) console.warn("[musicApi]", error);
   return data;
 }
 
@@ -212,7 +212,7 @@ export async function lookupMusicBrainz(type: 'artist' | 'release' | 'recording'
   const { data, error } = await supabase.functions.invoke('musicbrainz', {
     body: { action: 'lookup', params: { type, mbid, inc } }
   });
-  if (error) throw error;
+  if (error) console.warn("[musicApi]", error);
   return data;
 }
 
@@ -254,7 +254,7 @@ export async function searchLastFmArtist(name: string, limit = 10): Promise<Last
   const { data, error } = await supabase.functions.invoke('lastfm', {
     body: { action: 'searchArtist', params: { name, limit } }
   });
-  if (error) throw error;
+  if (error) console.warn("[musicApi]", error);
   return data?.results?.artistmatches?.artist || [];
 }
 
@@ -262,7 +262,7 @@ export async function getLastFmArtistInfo(name: string): Promise<LastFmArtist | 
   const { data, error } = await supabase.functions.invoke('lastfm', {
     body: { action: 'getArtistInfo', params: { name } }
   });
-  if (error) throw error;
+  if (error) console.warn("[musicApi]", error);
   return data?.artist || null;
 }
 
@@ -270,7 +270,7 @@ export async function getLastFmTopTracks(name: string, limit = 10): Promise<Last
   const { data, error } = await supabase.functions.invoke('lastfm', {
     body: { action: 'getTopTracks', params: { name, limit } }
   });
-  if (error) throw error;
+  if (error) console.warn("[musicApi]", error);
   return data?.toptracks?.track || [];
 }
 
@@ -278,7 +278,7 @@ export async function getLastFmTopAlbums(name: string, limit = 10): Promise<Last
   const { data, error } = await supabase.functions.invoke('lastfm', {
     body: { action: 'getTopAlbums', params: { name, limit } }
   });
-  if (error) throw error;
+  if (error) console.warn("[musicApi]", error);
   return data?.topalbums?.album || [];
 }
 
@@ -286,7 +286,7 @@ export async function getSimilarArtists(name: string, limit = 10): Promise<LastF
   const { data, error } = await supabase.functions.invoke('lastfm', {
     body: { action: 'getSimilarArtists', params: { name, limit } }
   });
-  if (error) throw error;
+  if (error) console.warn("[musicApi]", error);
   return data?.similarartists?.artist || [];
 }
 
@@ -294,7 +294,7 @@ export async function searchLastFmTrack(track: string, artist?: string, limit = 
   const { data, error } = await supabase.functions.invoke('lastfm', {
     body: { action: 'searchTrack', params: { track, artist, limit } }
   });
-  if (error) throw error;
+  if (error) console.warn("[musicApi]", error);
   return data?.results?.trackmatches?.track || [];
 }
 
@@ -302,7 +302,7 @@ export async function getChartTopArtists(limit = 20): Promise<LastFmArtist[]> {
   const { data, error } = await supabase.functions.invoke('lastfm', {
     body: { action: 'getTopArtists', params: { limit } }
   });
-  if (error) throw error;
+  if (error) console.warn("[musicApi]", error);
   return data?.artists?.artist || [];
 }
 
@@ -320,7 +320,7 @@ export async function searchDeezerArtist(name: string, limit = 10): Promise<Deez
   const { data, error } = await supabase.functions.invoke('deezer', {
     body: { action: 'searchArtist', params: { name, limit } }
   });
-  if (error) throw error;
+  if (error) console.warn("[musicApi]", error);
   return data?.data || [];
 }
 
@@ -328,7 +328,7 @@ export async function searchDeezerTrack(query: string, limit = 10): Promise<Deez
   const { data, error } = await supabase.functions.invoke('deezer', {
     body: { action: 'searchTrack', params: { query, limit } }
   });
-  if (error) throw error;
+  if (error) console.warn("[musicApi]", error);
   return data?.data || [];
 }
 
@@ -336,7 +336,7 @@ export async function searchDeezerAlbum(query: string, limit = 10): Promise<Deez
   const { data, error } = await supabase.functions.invoke('deezer', {
     body: { action: 'searchAlbum', params: { query, limit } }
   });
-  if (error) throw error;
+  if (error) console.warn("[musicApi]", error);
   return data?.data || [];
 }
 
@@ -344,7 +344,7 @@ export async function getDeezerArtist(artistId: number): Promise<DeezerArtist | 
   const { data, error } = await supabase.functions.invoke('deezer', {
     body: { action: 'getArtist', params: { artistId } }
   });
-  if (error) throw error;
+  if (error) console.warn("[musicApi]", error);
   return data || null;
 }
 
@@ -352,7 +352,7 @@ export async function getDeezerArtistTopTracks(artistId: number, limit = 10): Pr
   const { data, error } = await supabase.functions.invoke('deezer', {
     body: { action: 'getArtistTopTracks', params: { artistId, limit } }
   });
-  if (error) throw error;
+  if (error) console.warn("[musicApi]", error);
   return data?.data || [];
 }
 
@@ -360,7 +360,7 @@ export async function getDeezerArtistAlbums(artistId: number, limit = 20): Promi
   const { data, error } = await supabase.functions.invoke('deezer', {
     body: { action: 'getArtistAlbums', params: { artistId, limit } }
   });
-  if (error) throw error;
+  if (error) console.warn("[musicApi]", error);
   return data?.data || [];
 }
 
@@ -368,7 +368,7 @@ export async function getDeezerChart(type: 'tracks' | 'albums' | 'artists' = 'tr
   const { data, error } = await supabase.functions.invoke('deezer', {
     body: { action: 'getChart', params: { type, limit } }
   });
-  if (error) throw error;
+  if (error) console.warn("[musicApi]", error);
   return data?.data || [];
 }
 
@@ -592,7 +592,7 @@ export async function getTrendingPodcasts(limit = 10): Promise<PodcastFeed[]> {
   const { data, error } = await supabase.functions.invoke('podcast', {
     body: { action: 'getTrendingPodcasts', params: { limit } }
   });
-  if (error) throw error;
+  if (error) console.warn("[musicApi]", error);
   return data?.feeds || [];
 }
 
@@ -600,7 +600,7 @@ export async function getRecentEpisodes(limit = 10): Promise<PodcastEpisode[]> {
   const { data, error } = await supabase.functions.invoke('podcast', {
     body: { action: 'getRecentEpisodes', params: { limit } }
   });
-  if (error) throw error;
+  if (error) console.warn("[musicApi]", error);
   return data?.episodes || [];
 }
 
@@ -608,7 +608,7 @@ export async function getRandomEpisodes(limit = 10): Promise<PodcastEpisode[]> {
   const { data, error } = await supabase.functions.invoke('podcast', {
     body: { action: 'getRandomEpisodes', params: { limit } }
   });
-  if (error) throw error;
+  if (error) console.warn("[musicApi]", error);
   return data?.episodes || [];
 }
 
@@ -616,7 +616,7 @@ export async function searchPodcasts(query: string, limit = 10): Promise<Podcast
   const { data, error } = await supabase.functions.invoke('podcast', {
     body: { action: 'searchPodcasts', params: { query, limit } }
   });
-  if (error) throw error;
+  if (error) console.warn("[musicApi]", error);
   return data?.feeds || [];
 }
 
@@ -624,7 +624,7 @@ export async function getEpisodesByPodcast(feedId: number, limit = 20): Promise<
   const { data, error } = await supabase.functions.invoke('podcast', {
     body: { action: 'getEpisodesByPodcast', params: { feedId, limit } }
   });
-  if (error) throw error;
+  if (error) console.warn("[musicApi]", error);
   return data?.items || [];
 }
 
@@ -645,7 +645,7 @@ export async function searchYouTubeVideos(query: string, maxResults = 10): Promi
   const { data, error } = await supabase.functions.invoke('youtube', {
     body: { action: 'search', params: { query, maxResults } }
   });
-  if (error) throw error;
+  if (error) console.warn("[musicApi]", error);
   return data?.items || data?.results || data?.videos || [];
 }
 
@@ -653,7 +653,7 @@ export async function getYouTubeVideo(videoId: string): Promise<YouTubeVideo | n
   const { data, error } = await supabase.functions.invoke('youtube', {
     body: { action: 'getVideo', params: { videoId } }
   });
-  if (error) throw error;
+  if (error) console.warn("[musicApi]", error);
   return data || null;
 }
 
@@ -661,7 +661,7 @@ export async function getTrendingYouTubeMusic(maxResults = 10): Promise<YouTubeV
   const { data, error } = await supabase.functions.invoke('youtube', {
     body: { action: 'getTrending', params: { maxResults } }
   });
-  if (error) throw error;
+  if (error) console.warn("[musicApi]", error);
   return data?.items || [];
 }
 
@@ -690,7 +690,7 @@ export async function getAlbumTracklist(albumName: string, artistName?: string):
   const { data, error } = await supabase.functions.invoke('musicbrainz', {
     body: { action: 'getAlbumTracklist', params: { albumName, artistName } }
   });
-  if (error) throw error;
+  if (error) console.warn("[musicApi]", error);
   return data || { album: null, tracks: [] };
 }
 
@@ -702,7 +702,7 @@ export async function getArtistDiscography(artistName: string, limit = 10): Prom
   const { data, error } = await supabase.functions.invoke('musicbrainz', {
     body: { action: 'getArtistDiscography', params: { artistName, limit } }
   });
-  if (error) throw error;
+  if (error) console.warn("[musicApi]", error);
   return data || { artist: null, albums: [] };
 }
 
