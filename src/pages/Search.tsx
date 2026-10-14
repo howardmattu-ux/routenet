@@ -277,7 +277,16 @@ export default function Search() {
     .filter((t) => !isBlockedArtist(t.artist, blocked))
     .slice()
     .sort((a, b) => rankedScore(debouncedQuery, b, taste) - rankedScore(debouncedQuery, a, taste));
-  const baseTracks: Track[] = liveTracks.length ? liveTracks : (cached?.tracks || []);
+  // Missing artwork: borrow the thumbnail of the matching YouTube video.
+  const ytThumbFor = (t: any): string | undefined => {
+    const tt = normQ(t.title || ""), ta = normQ((t.artist || "").split(/,|&/)[0]);
+    const hit = (youtubeResults || []).find((v: any) => normQ(v.title || "").includes(tt) && (!ta || normQ(`${v.title} ${v.channelTitle}`).includes(ta)))
+      || (youtubeResults || []).find((v: any) => tt && normQ(v.title || "").includes(tt));
+    return hit?.thumbnail;
+  };
+  const noArt = (u?: string) => !u || /placeholder|\/images\/(cover|artist)\/\//.test(u);
+  const baseTracks: Track[] = (liveTracks.length ? liveTracks : (cached?.tracks || [])).map((t: any) =>
+    noArt(t.artwork) ? { ...t, artwork: ytThumbFor(t) || t.artwork, cover: ytThumbFor(t) || t.cover } : t);
   // Blend YouTube results into the song list so they appear with top songs.
   const ytTracks: Track[] = (youtubeResults || []).map((v: any) => ({
     id: `yt-${v.id}`, title: v.title, artist: v.channelTitle || "YouTube",
@@ -292,15 +301,29 @@ export default function Search() {
     .sort((a, b) => b.s - a.s)
     .map((x) => x.t);
 
-  const liveArtists: Artist[] = hasApiResults
+  // Artists that actually own songs in the results (used to drop fake duplicates).
+  const songArtists = new Set(baseTracks.flatMap((t) => (t.artist || "").split(/,|&|feat\.?|ft\.?/i).map((a) => normQ(a))).filter(Boolean));
+  const liveArtistsRaw: Artist[] = hasApiResults
     ? searchResults.artists.map((a): Artist => ({ id: a.id, name: a.name, avatar: a.avatar || '', monthlyListeners: a.monthlyListeners || 0 }))
         .filter((a) => !isBlockedArtist(a.name, blocked))
-        .sort((a, b) => rankedScore(debouncedQuery, { name: b.name, nb_fan: (b as any).monthlyListeners }, taste) - rankedScore(debouncedQuery, { name: a.name, nb_fan: (a as any).monthlyListeners }, taste))
+        .sort((a, b) => (b.monthlyListeners || 0) - (a.monthlyListeners || 0))
     : [];
-  // YouTube channels become artist profiles too, so artists found only on YouTube still show.
+  // Same-name artist pages: keep only the biggest one. Lookalikes that match
+  // the query but own none of the matching songs and have few fans are dropped.
+  const seenNames = new Set<string>();
+  const topFans = liveArtistsRaw[0]?.monthlyListeners || 0;
+  const liveArtists: Artist[] = liveArtistsRaw.filter((a, i) => {
+    const k = normQ(a.name);
+    if (!k || seenNames.has(k)) return false;
+    seenNames.add(k);
+    if (i > 0 && songArtists.size && !songArtists.has(k) && (a.monthlyListeners || 0) < topFans * 0.02) return false;
+    return true;
+  }).sort((a, b) => rankedScore(debouncedQuery, { name: b.name, nb_fan: (b as any).monthlyListeners }, taste) - rankedScore(debouncedQuery, { name: a.name, nb_fan: (a as any).monthlyListeners }, taste));
+  // YouTube channels become artist profiles only when no catalog artist has that name.
   const ytArtists: Artist[] = (youtubeResults || [])
     .filter((v: any) => v.channelTitle && normQ(v.channelTitle).includes(normQ(debouncedQuery)))
-    .map((v: any) => ({ id: `ytc-${v.channelId || v.channelTitle}`, name: String(v.channelTitle).replace(/\s*-\s*Topic$|VEVO$/i, "").trim(), avatar: v.channelThumbnail || v.thumbnail || "", monthlyListeners: 0 }));
+    .map((v: any) => ({ id: `ytc-${v.channelId || v.channelTitle}`, name: String(v.channelTitle).replace(/\s*-\s*Topic$|\s*VEVO$|\s*official$/i, "").trim(), avatar: v.channelThumbnail || v.thumbnail || "", monthlyListeners: 0 }))
+    .filter((a) => !seenNames.has(normQ(a.name)) && !seenNames.has(normQ(a.name).replace(/ /g, "")));
   const baseArtists: Artist[] = liveArtists.length ? liveArtists : (cached?.artists || []);
   const filteredArtists: Artist[] = [...baseArtists, ...ytArtists];
 
