@@ -158,7 +158,7 @@ export default function Home() {
   return (
     <div ref={scrollRef} className="custom-scrollbar relative min-h-screen overflow-y-auto pb-28 lg:min-h-0 lg:pb-8">
       <header className="sticky top-0 z-30 bg-background/80 backdrop-blur-xl lg:bg-background-elevated/90">
-        <div className="px-4 pb-3 pt-9 lg:px-7 lg:pb-4 lg:pt-3">
+        <div className="px-4 pb-3 pt-9 lg:px-8 lg:pb-3 lg:pt-5">
           <div className="flex items-center justify-between gap-3">
             <HomeFilterPills value={filter} onChange={setFilter} />
             <CardStyleToggle />
@@ -166,7 +166,7 @@ export default function Home() {
         </div>
       </header>
 
-      <main className="relative space-y-4 px-4 pt-2 lg:space-y-7 lg:px-7 lg:pt-3">
+      <main className="relative space-y-4 px-4 pt-2 lg:space-y-8 lg:px-8 lg:pt-2">
         <QuickAccessGrid />
         {visibleSections.map((section) => (
           <div key={section.id} className="space-y-4">
