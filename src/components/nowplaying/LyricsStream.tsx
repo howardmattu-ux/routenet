@@ -73,8 +73,19 @@ export function LyricsStream({ title, artist, album, currentTime, className, onS
   }, [lines, currentTime, isStory, story, isPlain, plain.length, playerDuration]);
 
   useEffect(() => {
+    if (isPlain) return;
     if (synced && activeRef.current) activeRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
-  }, [activeIndex, synced]);
+  }, [activeIndex, synced, isPlain]);
+
+  // Unsynced lyrics: the whole sheet glides down continuously with the song.
+  const scrollBoxRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = scrollBoxRef.current;
+    if (!isPlain || !synced || !el) return;
+    const d = playerDuration > 0 ? playerDuration : 210;
+    const p = Math.min(1, Math.max(0, currentTime / d));
+    el.scrollTo({ top: p * (el.scrollHeight - el.clientHeight), behavior: "smooth" });
+  }, [currentTime, isPlain, synced, playerDuration]);
 
   const toggleSync = () => {
     setSynced((s) => {
@@ -85,14 +96,14 @@ export function LyricsStream({ title, artist, album, currentTime, className, onS
   };
 
   const display = hasSynced ? lines! : isStory ? story.map((text, i) => ({ time: i, text })) : plain.map((text, i) => ({ time: i, text }));
-  const highlight = hasSynced || isStory || isPlain;
+  const highlight = hasSynced || isStory;
 
   return (
     <div onDoubleClick={toggleSync} className={cn("relative h-full min-h-0 select-none", className)}>
       {flash && (
         <span className="absolute left-1/2 top-3 z-10 -translate-x-1/2 rounded-full bg-foreground/15 px-3 py-1 text-xs font-semibold text-foreground backdrop-blur">{flash}</span>
       )}
-      <div className="custom-scrollbar h-full overflow-y-auto pr-4 [mask-image:linear-gradient(to_bottom,transparent,black_15%,black_85%,transparent)]">
+      <div ref={scrollBoxRef} className="custom-scrollbar h-full overflow-y-auto pr-4 [mask-image:linear-gradient(to_bottom,transparent,black_15%,black_85%,transparent)]">
         {isLoading && <div className="flex h-full items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>}
         {isStory && <p className="sticky top-0 flex items-center gap-2 pt-2 text-xs font-semibold uppercase tracking-widest text-muted-foreground"><Music2 className="h-4 w-4" /> Song story</p>}
         <div className="space-y-5 py-[30vh]">
@@ -106,7 +117,7 @@ export function LyricsStream({ title, artist, album, currentTime, className, onS
                 onClick={() => hasSynced && onSeek?.(line.time)}
                 className={cn(
                   "cursor-pointer text-[28px] font-bold leading-[1.25] tracking-tight transition-all duration-500 xl:text-[34px]",
-                  isActive ? "text-foreground" : isPast ? "text-foreground/30" : "text-foreground/55",
+                  !highlight ? "text-foreground/85" : isActive ? "text-foreground" : isPast ? "text-foreground/30" : "text-foreground/55",
                 )}
               >
                 {line.text}
