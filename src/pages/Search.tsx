@@ -209,7 +209,16 @@ const persistedSearch = { query: "" };
 export default function Search() {
   const navigate = useNavigate();
   const { playTrack } = usePlayer();
-  const { query, debouncedQuery, setQuery, clearQuery } = useDebouncedSearch(400, persistedSearch.query);
+  const pendingQ = typeof sessionStorage !== "undefined" ? sessionStorage.getItem("rn_pending_q") : null;
+  const { query, debouncedQuery, setQuery, clearQuery } = useDebouncedSearch(400, pendingQ ?? persistedSearch.query);
+  // The desktop top-bar search box drives this page.
+  useEffect(() => {
+    sessionStorage.removeItem("rn_pending_q");
+    const onTop = (e: Event) => { setQuery(String((e as CustomEvent).detail ?? "")); sessionStorage.removeItem("rn_pending_q"); };
+    window.addEventListener("rn-search", onTop);
+    return () => window.removeEventListener("rn-search", onTop);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [isFocused, setIsFocused] = useState(false);
   const [searchHistory, setSearchHistory] = useState<string[]>([]);
   const [activeFilter, setActiveFilter] = useState<FilterType>('all');
