@@ -155,6 +155,21 @@ export async function getPlaylistTracks(playlistId: string): Promise<PlaylistTra
   return (data ?? []) as PlaylistTrackRow[];
 }
 
+/** First song's artwork becomes the playlist cover when it has none yet. */
+async function ensureCover(playlistId: string, artwork?: string | null) {
+  if (!artwork) return;
+  try {
+    if (playlistId.startsWith("local-")) {
+      const pl = getLocalPlaylists().find(p => p.id === playlistId);
+      if (pl && !pl.cover_image) await updatePlaylist(playlistId, { cover_image: artwork });
+    } else {
+      const { data } = await supabase.from("playlists").select("cover_image").eq("id", playlistId).maybeSingle();
+      if (data && !data.cover_image) await updatePlaylist(playlistId, { cover_image: artwork });
+    }
+    window.dispatchEvent(new Event("playlists-updated"));
+  } catch { /* cover is cosmetic */ }
+}
+
 export async function addTrackToPlaylist(
   playlistId: string,
   track: { title: string; artist: string; album?: string; artwork?: string; duration?: number; preview?: string }
@@ -176,6 +191,7 @@ export async function addTrackToPlaylist(
       added_at: new Date().toISOString(),
     });
     saveLocalPlaylistTracks(tracks);
+    await ensureCover(playlistId, track.artwork);
     return true;
   }
 
@@ -202,6 +218,7 @@ export async function addTrackToPlaylist(
     });
 
   if (error) { console.error("Error adding track:", error); return false; }
+  await ensureCover(playlistId, track.artwork);
   return true;
 }
 
@@ -228,6 +245,7 @@ export async function addTracksToPlaylist(
       });
     }
     saveLocalPlaylistTracks(allTracks);
+    await ensureCover(playlistId, tracks.find(t => t.artwork)?.artwork);
     return true;
   }
 
@@ -253,6 +271,7 @@ export async function addTracksToPlaylist(
 
   const { error } = await supabase.from("playlist_tracks").insert(rows);
   if (error) { console.error("Error adding tracks:", error); return false; }
+  await ensureCover(playlistId, tracks.find(t => t.artwork)?.artwork);
   return true;
 }
 
