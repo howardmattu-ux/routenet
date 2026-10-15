@@ -8,9 +8,9 @@
 @layer base {
   :root {
     /* Neutral canvas */
-    --background: 240 28% 5%;
-    --background-elevated: 244 26% 9%;
-    --background-card: 246 22% 13%;
+    --background: 0 0% 0%;
+    --background-elevated: 0 0% 7%;
+    --background-card: 0 0% 11%;
     --foreground: 0 0% 100%;
 
     --card: 246 22% 12%;

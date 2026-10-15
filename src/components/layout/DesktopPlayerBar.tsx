@@ -72,10 +72,10 @@ export function DesktopPlayerBar() {
 
   return (
     <>
-      <footer className="hidden h-[96px] shrink-0 grid-cols-[minmax(240px,1fr)_minmax(340px,1.5fr)_minmax(240px,1fr)] items-stretch gap-2 bg-background px-2 pb-2 lg:grid">
-        <div className="flex min-w-0 items-center gap-3 rounded-lg bg-background-elevated px-3">
+      <footer className="hidden h-[72px] shrink-0 grid-cols-[minmax(240px,1fr)_minmax(340px,1.5fr)_minmax(240px,1fr)] items-stretch gap-2 bg-background px-2 pb-1 lg:grid">
+        <div className="flex min-w-0 items-center gap-3 rounded-lg px-2">
           <button onClick={() => navigate("/now-playing")} className="flex min-w-0 items-center gap-3 text-left">
-            <img src={currentTrack.artwork || "/placeholder.svg"} alt="" className="h-[72px] w-[72px] rounded-md object-cover shadow-lg" />
+            <img src={currentTrack.artwork || "/placeholder.svg"} alt="" onError={(e) => { if (!e.currentTarget.src.endsWith("/placeholder.svg")) e.currentTarget.src = "/placeholder.svg"; }} className="h-14 w-14 rounded object-cover" />
             <span className="min-w-0">
               <span className="block truncate text-sm font-semibold">{currentTrack.title}</span>
               <span className="block truncate text-xs text-muted-foreground">{currentTrack.artist}</span>
@@ -93,11 +93,11 @@ export function DesktopPlayerBar() {
           </Button>
         </div>
 
-        <div className="flex flex-col justify-center rounded-lg bg-background-elevated px-6">
-          <div className="mb-2 flex items-center justify-center gap-2">
+        <div className="flex flex-col justify-center px-6">
+          <div className="mb-1 flex items-center justify-center gap-2">
             <Button variant="ghost" size="icon" className={cn("h-8 w-8", shuffle && "text-primary")} onClick={toggleShuffle} aria-label="Shuffle"><Shuffle className="h-4 w-4" /></Button>
             <Button variant="ghost" size="icon" className="h-8 w-8" onClick={previous} aria-label="Previous"><SkipBack className="h-4 w-4" fill="currentColor" /></Button>
-            <Button size="icon" className="h-9 w-9 rounded-full" onClick={togglePlay} aria-label={isPlaying ? "Pause" : "Play"}>{isPlaying ? <Pause className="h-4 w-4" fill="currentColor" /> : <Play className="ml-0.5 h-4 w-4" fill="currentColor" />}</Button>
+            <Button size="icon" className="h-8 w-8 rounded-full bg-foreground text-background hover:scale-105 hover:bg-foreground" onClick={togglePlay} aria-label={isPlaying ? "Pause" : "Play"}>{isPlaying ? <Pause className="h-4 w-4" fill="currentColor" /> : <Play className="ml-0.5 h-4 w-4" fill="currentColor" />}</Button>
             <Button variant="ghost" size="icon" className="h-8 w-8" onClick={next} aria-label="Next"><SkipForward className="h-4 w-4" fill="currentColor" /></Button>
             <Button variant="ghost" size="icon" className={cn("h-8 w-8", repeat !== "off" && "text-primary")} onClick={toggleRepeat} aria-label="Repeat">{repeat === "one" ? <Repeat1 className="h-4 w-4" /> : <Repeat className="h-4 w-4" />}</Button>
           </div>
@@ -116,7 +116,7 @@ export function DesktopPlayerBar() {
           </div>
         </div>
 
-        <div className="flex items-center justify-end gap-1 rounded-lg bg-background-elevated px-3 text-muted-foreground">
+        <div className="flex items-center justify-end gap-1 px-3 text-muted-foreground">
           <Button
             variant="ghost"
             size="icon"
