@@ -121,23 +121,33 @@ async function searchPiped(query: string, limit: number): Promise<SearchTrack[]>
     return true;
   });
 
-  // Relevance first: title/artist match, then official uploads, then reach.
+  // Relevance first: exact song matches dominate, then official uploads, then reach.
   const q = norm(query);
+  const words = query.toLowerCase().split(/\s+/).map(norm).filter((w) => w.length > 1);
+  const rel = (t: any) => {
+    const title = norm(t.title);
+    const artist = norm(t.artist);
+    let s = 0;
+    if (artist + title === q || title + artist === q) s += 300;
+    else if (title === q) s += 250;
+    else if (artist === q) s += 120;
+    else if (title.startsWith(q)) s += 90;
+    else if (q.includes(title) && title.length > 2 && words.some((w) => artist.includes(w))) s += 200;
+    else if (title.includes(q) || artist.includes(q)) s += 40;
+    // Every query word must appear somewhere, else it's an unrelated upload.
+    const hay = title + artist;
+    const hits = words.filter((w) => hay.includes(w)).length;
+    if (words.length && hits < Math.ceil(words.length * 0.6)) s -= 200;
+    if (/(cover|remix|live|sped up|slowed|nightcore|8d)/i.test(t.title) && !/(cover|remix|live|sped|slowed|nightcore|8d)/i.test(query)) s -= 60;
+    if (t.__official) s += 25;
+    s += Math.min(Math.log10(Math.max(t.__views, 1)) * 4, 24);
+    return s;
+  };
   return unique
-    .sort((a: any, b: any) => {
-      const rel = (t: any) => {
-        const title = norm(t.title);
-        const artist = norm(t.artist);
-        let s = 0;
-        if (title === q || artist === q) s += 60;
-        else if (title.startsWith(q) || artist.startsWith(q)) s += 45;
-        else if (title.includes(q) || artist.includes(q)) s += 30;
-        if (t.__official) s += 20;
-        s += Math.min(Math.log10(Math.max(t.__views, 1)) * 4, 24);
-        return s;
-      };
-      return rel(b) - rel(a);
-    })
+    .map((t) => ({ t, s: rel(t) }))
+    .filter((x) => x.s > -100)
+    .sort((a, b) => b.s - a.s)
+    .map((x) => x.t)
     .slice(0, limit);
 }
 

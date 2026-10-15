@@ -169,19 +169,35 @@ export function VideoCanvas({ trackId, artwork, artist = "", title = "", enabled
   useEffect(() => { setReady(false); if (!id) return; const t = window.setTimeout(() => setReady(true), 3800); return () => window.clearTimeout(t); }, [id]);
   useEffect(() => { onActiveChange?.(active); }, [active, onActiveChange]);
 
-  // Sync script: video pauses/plays with the song and starts at the same point in the song.
+  // Sync script: the video runs on the song's own clock — 1:1 with the audio.
+  // It only plays while the song plays, and is re-aligned to the song's
+  // elapsed time whenever it is ready, the song seeks, or drift builds up.
   const { isPlaying, progress, duration } = usePlayer();
   const frameRef = useRef<HTMLIFrameElement>(null);
   const send = (func: string, args: unknown[] = []) =>
     frameRef.current?.contentWindow?.postMessage(JSON.stringify({ event: "command", func, args }), "*");
-  useEffect(() => { if (ready) send(isPlaying ? "playVideo" : "pauseVideo"); }, [isPlaying, ready]);
-  // Seek follow: when the song jumps (skip ahead / back), jump the video too.
-  const lastSec = useRef(0);
+  const songSec = progress * (duration || 0);
+  const songSecRef = useRef(0);
+  songSecRef.current = songSec;
+  // When the frame becomes ready, jump to the exact song position.
+  useEffect(() => { if (ready) send("seekTo", [songSecRef.current, true]); }, [ready]);
   useEffect(() => {
-    const sec = progress * (duration || 0);
-    if (ready && Math.abs(sec - lastSec.current) > 3) send("seekTo", [30 + sec, true]);
-    lastSec.current = sec;
-  }, [progress, duration, ready]);
+    if (!ready) return;
+    if (isPlaying) { send("seekTo", [songSecRef.current, true]); send("playVideo"); }
+    else send("pauseVideo");
+  }, [isPlaying, ready]);
+  // Seeks / drift: re-align whenever song time jumps, plus every 10s.
+  const lastSec = useRef(0);
+  const lastSync = useRef(0);
+  useEffect(() => {
+    if (!ready) return;
+    const jumped = Math.abs(songSec - lastSec.current) > 1.5;
+    if (jumped || Math.abs(songSec - lastSync.current) > 10) {
+      send("seekTo", [songSec, true]);
+      lastSync.current = songSec;
+    }
+    lastSec.current = songSec;
+  }, [songSec, ready]);
 
   return (
     <div aria-hidden className={cn("pointer-events-none absolute inset-0 overflow-hidden select-none", className)}>
@@ -191,7 +207,7 @@ export function VideoCanvas({ trackId, artwork, artist = "", title = "", enabled
           key={id}
           title="canvas"
           tabIndex={-1}
-          src={`https://www.youtube-nocookie.com/embed/${id}?autoplay=1&mute=1&controls=0&loop=1&playlist=${id}&modestbranding=1&playsinline=1&rel=0&iv_load_policy=3&disablekb=1&fs=0&showinfo=0&cc_load_policy=0&start=30&enablejsapi=1`}
+          src={`https://www.youtube-nocookie.com/embed/${id}?autoplay=1&mute=1&controls=0&loop=1&playlist=${id}&modestbranding=1&playsinline=1&rel=0&iv_load_policy=3&disablekb=1&fs=0&showinfo=0&cc_load_policy=0&start=${Math.floor(songSecRef.current)}&enablejsapi=1`}
           allow="autoplay; encrypted-media"
           className={cn("pointer-events-none absolute left-1/2 top-1/2 h-[max(140%,78vw)] w-[max(140%,250vh)] -translate-x-1/2 -translate-y-1/2 transition-opacity duration-1000", ready ? "opacity-100" : "opacity-0")}
         />

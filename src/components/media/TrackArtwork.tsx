@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import type { Track } from "@/data/mockData";
 import { cn } from "@/lib/utils";
 import { getCachedYouTubeId } from "@/components/player/GlobalAudioPlayer";
-import { searchYouTubeForTrack } from "@/hooks/useYouTubePlayback";
 
 const PLACEHOLDER_ART = "/placeholder.svg";
 
@@ -27,23 +26,13 @@ export function TrackArtwork({ track, alt, className, loading = "lazy" }: {
     setLookedUp(false);
   }, [track.id, track.artwork, track.youtubeId, track.title, track.artist]);
 
-  const handleError = async () => {
+  // No network lookups on error: a scrolling list must never fire a request
+  // storm. Deezer artwork first, then a cached YouTube thumbnail, then placeholder.
+  const handleError = () => {
+    if (lookedUp) { if (src !== PLACEHOLDER_ART) setSrc(PLACEHOLDER_ART); return; }
+    setLookedUp(true);
     const knownFallback = youtubeArtwork(track.youtubeId || getCachedYouTubeId(track.title, track.artist));
-    if (knownFallback && src !== knownFallback) {
-      setSrc(knownFallback);
-      return;
-    }
-    if (!lookedUp) {
-      setLookedUp(true);
-      try {
-        const id = await searchYouTubeForTrack(track as Track);
-        if (id) {
-          setSrc(youtubeArtwork(id));
-          return;
-        }
-      } catch { /* use local fallback */ }
-    }
-    setSrc(PLACEHOLDER_ART);
+    setSrc(knownFallback && src !== knownFallback ? knownFallback : PLACEHOLDER_ART);
   };
 
   return <img src={src} alt={alt ?? `${track.title} artwork`} className={cn("bg-muted object-cover", className)} loading={loading} onError={handleError} />;

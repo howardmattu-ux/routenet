@@ -461,9 +461,9 @@ export default function Search() {
       <motion.header
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="sticky top-0 z-30 border-b border-white/10 bg-background/85 px-3 pt-3 pb-3 backdrop-blur-xl"
+        className="sticky top-0 z-30 bg-secondary px-2 pt-3 pb-2 lg:bg-background/85 lg:px-3 lg:backdrop-blur-xl"
       >
-        <div className="rounded-[26px] border border-white/10 bg-card/60 p-2 shadow-[0_12px_30px_rgba(0,0,0,0.18)]">
+        <div className="p-1">
           <div className="flex items-center gap-3">
             <button
               aria-label="Go back"
@@ -535,17 +535,22 @@ export default function Search() {
           )}
 
           {activeFilter !== 'mixes' && visibleItems.length > 0 && (
-            <section className="overflow-hidden rounded-[28px] border border-white/10 bg-card/40 p-2 shadow-[0_12px_32px_rgba(0,0,0,0.15)]">
-              <div className="px-2 py-1.5">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">Top results</p>
-              </div>
+            <section className="-mx-2">
+              {/* Query suggestions — Spotify style magnifier rows */}
+              {[...new Set([debouncedQuery, ...filteredTracks.slice(0, 3).map((t) => `${t.title} ${t.artist}`.toLowerCase())])]
+                .filter(Boolean).slice(0, 2).map((sug) => (
+                <button key={sug} onClick={() => setQuery(sug)} className="flex w-full items-center gap-3 rounded-md px-2 py-2 text-left hover:bg-white/5">
+                  <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-secondary"><SearchIcon className="h-5 w-5 text-foreground" /></span>
+                  <span className="truncate text-[15px] text-foreground">{sug}</span>
+                </button>
+              ))}
               <div>
                 {visibleItems.map((entry, i) => {
                   if (entry.type === 'track') {
                     const t = entry.item as Track;
                     return (
                       <motion.div key={`tr-${t.id}`} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: Math.min(i * 0.03, 0.3) }}
-                        className="group flex cursor-pointer items-center gap-3 rounded-[18px] px-2 py-2.5 transition-colors hover:bg-white/5"
+                        className="group flex cursor-pointer items-center gap-3 rounded-md px-2 py-2 transition-colors hover:bg-white/5"
                         onClick={() => {
                           addRecentSearchItem({
                             id: String(t.id), kind: "track", title: t.title,
@@ -554,7 +559,7 @@ export default function Search() {
                           });
                           playTrack(t, filteredTracks);
                         }}>
-                        <div className="relative h-[52px] w-[52px] shrink-0 overflow-hidden rounded-[3px] bg-muted/30">
+                        <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-[2px] bg-muted/30">
                           <img src={t.artwork || ytThumbFor(t) || "/placeholder.svg"} alt="" loading="lazy" onError={(e) => { const y = ytThumbFor(t); const img = e.currentTarget; if (y && img.src !== y) img.src = y; else if (!img.src.endsWith("/placeholder.svg")) img.src = "/placeholder.svg"; }} className="h-full w-full object-cover" />
                           <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
                             <Play className="h-5 w-5 text-white" fill="currentColor" />
@@ -587,15 +592,15 @@ export default function Search() {
                     const ar = entry.item as Artist;
                     return (
                       <motion.div key={`ar-${ar.id}`} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: Math.min(i * 0.03, 0.3) }}
-                        className="flex cursor-pointer items-center gap-3 rounded-[18px] px-2 py-2.5 transition-colors hover:bg-white/5"
+                        className="flex cursor-pointer items-center gap-3 rounded-md px-2 py-2 transition-colors hover:bg-white/5"
                         onClick={() => {
                           addRecentSearchItem({ id: String(ar.id), kind: "artist", title: ar.name, subtitle: "Artist", artwork: ar.avatar, query: ar.name });
                           navigate(`/artist/${encodeURIComponent(ar.name)}`);
                         }}>
-                        <img src={ar.avatar || '/placeholder.svg'} alt="" loading="lazy" className="h-[52px] w-[52px] shrink-0 rounded-full bg-muted/30 object-cover" />
+                        <img src={ar.avatar || '/placeholder.svg'} alt="" loading="lazy" className="h-12 w-12 shrink-0 rounded-full bg-muted/30 object-cover" />
                         <div className="min-w-0 flex-1">
                           <p className="truncate text-[16px] font-normal leading-tight text-foreground">{ar.name}</p>
-                          <p className="mt-1 truncate text-[13px] text-muted-foreground">Artist • {formatExactNumber(Number(ar.monthlyListeners || 0))} listeners</p>
+                          <p className="mt-1 truncate text-[13px] text-muted-foreground">Artist</p>
                         </div>
                       </motion.div>
                     );
@@ -605,7 +610,7 @@ export default function Search() {
                     const al = entry.item as Album;
                     return (
                       <motion.div key={`al-${al.id}`} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: Math.min(i * 0.03, 0.3) }}
-                        className="flex cursor-pointer items-center gap-3 rounded-[18px] px-2 py-2.5 transition-colors hover:bg-white/5"
+                        className="flex cursor-pointer items-center gap-3 rounded-md px-2 py-2 transition-colors hover:bg-white/5"
                         onClick={() => {
                           addRecentSearchItem({ id: String(al.id), kind: "album", title: al.title, subtitle: `Album • ${al.artist}`, artwork: al.artwork, query: al.title });
                           navigate(`/album/${al.id.toString().replace("deezer-", "")}`);
@@ -623,7 +628,7 @@ export default function Search() {
                     const p = entry.item as any;
                     return (
                       <motion.div key={`pl-${p.id}`} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: Math.min(i * 0.03, 0.3) }}
-                        className="flex cursor-pointer items-center gap-3 rounded-[18px] px-2 py-2.5 transition-colors hover:bg-white/5"
+                        className="flex cursor-pointer items-center gap-3 rounded-md px-2 py-2 transition-colors hover:bg-white/5"
                         onClick={() => {
                           addRecentSearchItem({ id: String(p.id), kind: "playlist", title: p.name, subtitle: "Playlist", artwork: p.cover_image || undefined, query: p.name });
                           navigate(`/user-playlist/${p.id}`);
