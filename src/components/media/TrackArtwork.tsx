@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import type { Track } from "@/data/mockData";
 import { cn } from "@/lib/utils";
 import { getCachedYouTubeId } from "@/components/player/GlobalAudioPlayer";
-import { searchYouTubeForTrack } from "@/hooks/useYouTubePlayback";
 
 const PLACEHOLDER_ART = "/placeholder.svg";
 
