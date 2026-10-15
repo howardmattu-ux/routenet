@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowDownCircle, CheckCircle2, ChevronDown, MonitorPlay, MonitorSpeaker, PlusCircle, Heart, Loader2, ListMusic, MessageSquareQuote, Mic2, MoreHorizontal, Pause, Play, Plus, Repeat, Repeat1, Share2, Shuffle, SkipBack, SkipForward, Volume2 } from "lucide-react";
+import { ArrowDownCircle, CheckCircle2, ChevronDown, ChevronLeft, MonitorPlay, MonitorSpeaker, PlusCircle, Heart, Loader2, ListMusic, MessageSquareQuote, Mic2, MoreHorizontal, Pause, Play, Plus, Repeat, Repeat1, Share2, Shuffle, SkipBack, SkipForward, Volume2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { AddToPlaylistDialog } from "@/components/AddToPlaylistDialog";
@@ -175,8 +175,8 @@ export default function NowPlaying() {
       <VideoCanvas trackId={currentTrack.id} artwork={display.artwork} artist={currentTrack.artist} title={currentTrack.title} enabled={canvasOn} onActiveChange={setVideoActive} />
 
       {/* Desktop: back button, top-left */}
-      <button onClick={goBack} aria-label="Back" title="Back (Esc)" className="absolute left-6 top-6 z-30 hidden h-10 w-10 items-center justify-center rounded-full bg-background/50 text-foreground backdrop-blur-md transition-transform hover:scale-105 hover:bg-background/70 lg:flex">
-        <ChevronDown className="h-5 w-5" />
+      <button onClick={goBack} aria-label="Back" title="Back (Esc)" className="absolute left-6 top-6 z-[60] hidden h-10 w-10 pointer-events-auto items-center justify-center rounded-full bg-background/50 text-foreground backdrop-blur-md transition-transform hover:scale-105 hover:bg-background/70 lg:flex">
+        <ChevronLeft className="h-5 w-5" />
       </button>
 
       {/* Desktop: Artwork / Video switch */}
@@ -231,7 +231,7 @@ export default function NowPlaying() {
         </div>
       )}
       <header className="relative z-10 flex shrink-0 items-center justify-between px-5 pt-[calc(0.75rem+env(safe-area-inset-top))] lg:hidden">
-        <button onClick={() => navigate(-1)} aria-label="Back" className="min-w-0 text-left">
+        <button onClick={goBack} aria-label="Back" className="relative z-[60] min-w-0 text-left">
           <span className="flex items-center gap-1.5 text-[13px] font-semibold text-foreground/70">
             <ChevronDown className="h-4 w-4 shrink-0" />
             <span className="truncate">{toTitleCase(display.album || display.artist)}</span>

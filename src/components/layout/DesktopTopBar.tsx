@@ -84,9 +84,9 @@ export function DesktopTopBar() {
         <button
           onClick={() => navigate("/home")}
           aria-label="Home"
-          className={cn("flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-secondary transition-transform hover:scale-105", onHome ? "text-foreground" : "text-muted-foreground")}
+          className={cn("flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-secondary transition-transform hover:scale-105", onHome ? "text-foreground" : "text-muted-foreground")}
         >
-          <Home className="h-6 w-6" fill={onHome ? "currentColor" : "none"} />
+          <Home className="h-7 w-7" fill={onHome ? "currentColor" : "none"} />
         </button>
         <div ref={boxRef} className="relative w-full max-w-[480px]">
           <div className={cn("flex h-12 w-full items-center gap-3 rounded-full bg-secondary px-4 transition-shadow hover:bg-muted", open && rows.length ? "ring-2 ring-foreground" : "focus-within:ring-2 focus-within:ring-foreground")}>
@@ -151,7 +151,7 @@ export function DesktopTopBar() {
             </div>
           )}
         </div>
-        <button onClick={() => navigate("/radio")} aria-label="Radio" className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-secondary text-muted-foreground transition-transform hover:scale-105 hover:text-foreground">
+        <button onClick={() => navigate("/radio")} aria-label="Radio" className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-secondary text-muted-foreground transition-transform hover:scale-105 hover:text-foreground">
           <Radio className="h-5 w-5" />
         </button>
       </div>
