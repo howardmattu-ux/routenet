@@ -4,7 +4,8 @@ import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { AppLogo } from "@/components/brand/AppLogo";
 import { Button } from "@/components/ui/button";
 import { getUserPlaylists, type PlaylistRow } from "@/services/playlistService";
-import { getLikedSongs } from "@/pages/Library";
+import { getLikedSongs, getLikedAlbums } from "@/pages/Library";
+import { getPlaylistTracks } from "@/services/playlistService";
 import type { Track } from "@/data/mockData";
 import { cn } from "@/lib/utils";
 
@@ -19,13 +20,24 @@ export function DesktopSidebar() {
   const navigate = useNavigate();
   const [playlists, setPlaylists] = useState<PlaylistRow[]>([]);
   const [liked, setLiked] = useState<Track[]>([]);
+  const [albums, setAlbums] = useState(getLikedAlbums());
 
   useEffect(() => {
-    const syncLiked = () => setLiked(getLikedSongs());
+    const syncLiked = () => { setLiked(getLikedSongs()); setAlbums(getLikedAlbums()); };
+    // Playlists without a cover use their first song's artwork.
+    const syncPlaylists = () => getUserPlaylists().then(async (rows) => {
+      const withCovers = await Promise.all(rows.map(async (p) => {
+        if (p.cover_image) return p;
+        const first = (await getPlaylistTracks(p.id).catch(() => [])).find((t) => t.track_artwork);
+        return { ...p, cover_image: first?.track_artwork ?? null };
+      }));
+      setPlaylists(withCovers);
+    }).catch(() => undefined);
     syncLiked();
+    syncPlaylists();
     window.addEventListener("liked-updated", syncLiked);
-    getUserPlaylists().then(setPlaylists).catch(() => undefined);
-    return () => window.removeEventListener("liked-updated", syncLiked);
+    window.addEventListener("playlists-updated", syncPlaylists);
+    return () => { window.removeEventListener("liked-updated", syncLiked); window.removeEventListener("playlists-updated", syncPlaylists); };
   }, [location.pathname]);
 
   return (
@@ -47,7 +59,9 @@ export function DesktopSidebar() {
           <span className="flex items-center gap-1.5 text-[13px]">Recents <Clock3 className="h-3.5 w-3.5" /></span>
         </div>
         <button onClick={() => navigate("/liked")} className="flex w-full items-center gap-3 rounded-md px-2 py-1.5 text-left transition-colors hover:bg-sidebar-accent/60">
-          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded bg-gradient-to-br from-accent to-primary"><Heart className="h-5 w-5 text-primary-foreground" fill="currentColor" /></span>
+          {liked[0]?.artwork
+            ? <span className="relative h-12 w-12 shrink-0 overflow-hidden rounded"><img src={liked[0].artwork} alt="" className="h-full w-full object-cover" /><span className="absolute bottom-0.5 right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-primary"><Heart className="h-2.5 w-2.5 text-primary-foreground" fill="currentColor" /></span></span>
+            : <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded bg-gradient-to-br from-accent to-primary"><Heart className="h-5 w-5 text-primary-foreground" fill="currentColor" /></span>}
           <span className="min-w-0">
             <span className="block truncate text-[15px] font-semibold text-sidebar-foreground">Liked Songs</span>
             <span className="block text-[13px] text-muted-foreground">Playlist • {liked.length} songs</span>
@@ -71,6 +85,21 @@ export function DesktopSidebar() {
                 <span className="min-w-0">
                   <span className="block truncate text-[15px] font-semibold text-sidebar-foreground">{p.name}</span>
                   <span className="block text-[13px] text-muted-foreground">Playlist</span>
+                </span>
+              </button>
+            ))}
+          </div>
+        )}
+
+        {albums.length > 0 && (
+          <div className="mt-4">
+            <span className="mb-1 block px-2 text-[11px] font-bold uppercase text-muted-foreground">Albums</span>
+            {albums.map((a) => (
+              <button key={a.id} onClick={() => navigate(`/album/${a.id}`)} className="flex w-full items-center gap-3 rounded-md px-2 py-1.5 text-left transition-colors hover:bg-sidebar-accent/60">
+                <img src={a.artwork || "/placeholder.svg"} alt="" className="h-12 w-12 shrink-0 rounded object-cover" />
+                <span className="min-w-0">
+                  <span className="block truncate text-[15px] font-semibold text-sidebar-foreground">{a.title}</span>
+                  <span className="block truncate text-[13px] text-muted-foreground">Album • {a.artist}</span>
                 </span>
               </button>
             ))}

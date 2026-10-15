@@ -31,6 +31,9 @@ export function AppLayout({ children }: AppLayoutProps) {
   useMediaSession();
 
   // Navigating anywhere closes the inline desktop lyrics view.
+  useEffect(() => {
+    if (location.pathname !== "/now-playing" && location.pathname !== "/lyrics") sessionStorage.setItem("routenet_last_page", location.pathname + location.search);
+  }, [location.pathname, location.search]);
   useEffect(() => { setDesktopLyricsOpen(false); }, [location.pathname, location.search]);
 
   const hideChrome = location.pathname === "/lyrics";

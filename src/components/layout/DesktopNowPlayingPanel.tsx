@@ -48,14 +48,19 @@ export function DesktopNowPlayingPanel() {
         </div>
       ) : currentTrack ? (
         <>
-          <img
-            src={currentTrack.artwork || "/placeholder.svg"}
-            alt={`${currentTrack.title} cover`}
-            className="aspect-square w-full rounded-lg object-cover shadow-lg"
-          />
+          {/* 16:9 video card — the song's canvas video plays here, artwork shows until it starts */}
+          <div className="relative aspect-video w-full overflow-hidden rounded-lg bg-secondary shadow-lg">
+            <VideoCanvas
+              trackId={currentTrack.id}
+              artwork={currentTrack.artwork || ""}
+              artist={currentTrack.artist}
+              title={currentTrack.title}
+            />
+          </div>
           <div className="mt-3 min-w-0">
-            <p className="truncate text-xl font-bold text-foreground">{currentTrack.title}</p>
+            <p className="truncate text-2xl font-bold text-foreground">{currentTrack.title}</p>
             <p className="truncate text-sm text-muted-foreground">{currentTrack.artist}</p>
+            {currentTrack.album && <p className="mt-0.5 truncate text-xs text-muted-foreground">{currentTrack.album}</p>}
           </div>
           <AboutArtistCard artist={currentTrack.artist} />
 

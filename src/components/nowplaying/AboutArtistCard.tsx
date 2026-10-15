@@ -25,7 +25,8 @@ export function AboutArtistCard({ artist }: { artist: string }) {
         <div className="flex items-center justify-between gap-2">
           <div className="min-w-0">
             <p className="truncate text-base font-bold text-foreground">{data?.name || main}</p>
-            {fans > 0 && <p className="text-xs text-muted-foreground">{fans.toLocaleString()} fans</p>}
+            {fans > 0 && <p className="text-xs text-muted-foreground">{fans.toLocaleString()} monthly fans</p>}
+            {Number(data?.nb_album || 0) > 0 && <p className="text-xs text-muted-foreground">{data.nb_album} albums</p>}
           </div>
           <button onClick={() => navigate(`/artist/${encodeURIComponent(main)}`)} className="shrink-0 rounded-full border border-muted-foreground/50 px-4 py-1 text-xs font-bold text-foreground hover:border-foreground">
             Follow
