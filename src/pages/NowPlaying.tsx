@@ -59,6 +59,17 @@ export default function NowPlaying() {
   // Snap the ring back to zero the instant the user skips forward/back.
   useEffect(() => setLocalProgress(0), [currentTrack?.id]);
 
+  // Back works even when there is no history (direct open / refresh).
+  const goBack = useCallback(() => {
+    if ((window.history.state?.idx ?? 0) > 0) navigate(-1);
+    else navigate("/home", { replace: true });
+  }, [navigate]);
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") goBack(); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [goBack]);
+
   // Now Playing shows Deezer metadata when it resolves; YouTube data is the fallback.
   useEffect(() => {
     if (!currentTrack) { setMeta(null); return; }
@@ -163,6 +174,11 @@ export default function NowPlaying() {
       </AnimatePresence>
       <VideoCanvas trackId={currentTrack.id} artwork={display.artwork} artist={currentTrack.artist} title={currentTrack.title} enabled={canvasOn} onActiveChange={setVideoActive} />
 
+      {/* Desktop: back button, top-left */}
+      <button onClick={goBack} aria-label="Back" title="Back (Esc)" className="absolute left-6 top-6 z-30 hidden h-10 w-10 items-center justify-center rounded-full bg-background/50 text-foreground backdrop-blur-md transition-transform hover:scale-105 hover:bg-background/70 lg:flex">
+        <ChevronDown className="h-5 w-5" />
+      </button>
+
       {/* Desktop: Artwork / Video switch */}
       <div className="absolute left-1/2 top-6 z-20 hidden -translate-x-1/2 rounded-full bg-background/40 p-1 backdrop-blur-md lg:flex">
         {([["Artwork", false], ["Video", true]] as const).map(([label, on]) => (
@@ -176,9 +192,6 @@ export default function NowPlaying() {
       {/* Desktop: bent artwork left, rolling lyrics right */}
       <div className="relative z-10 hidden min-h-0 flex-1 grid-cols-[minmax(0,5fr)_minmax(0,6fr)] gap-12 px-14 pb-28 pt-10 lg:grid">
         <div className="flex min-h-0 flex-col justify-center [perspective:1200px]">
-          <Button variant="ghost" size="icon" onClick={() => navigate(-1)} aria-label="Back" className="mb-6 rounded-full text-foreground/70 hover:bg-foreground/10">
-            <ChevronDown className="h-5 w-5" />
-          </Button>
           <motion.div
             animate={showCanvas ? { x: -140, opacity: 0, scale: 0.9, filter: "blur(6px)" } : { x: 0, opacity: 1, scale: 1, filter: "blur(0px)" }}
             transition={{ type: "spring", stiffness: 70, damping: 20, mass: 1 }}
