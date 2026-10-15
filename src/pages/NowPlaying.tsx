@@ -61,8 +61,9 @@ export default function NowPlaying() {
 
   // Back works even when there is no history (direct open / refresh).
   const goBack = useCallback(() => {
-    if ((window.history.state?.idx ?? 0) > 0) navigate(-1);
-    else navigate("/home", { replace: true });
+    // Go to the last page the listener was on before opening the player.
+    const last = sessionStorage.getItem("routenet_last_page");
+    navigate(last && last !== "/now-playing" ? last : "/home");
   }, [navigate]);
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") goBack(); };
