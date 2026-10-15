@@ -47,9 +47,9 @@ export function QuickAccessGrid() {
           variant="ghost"
           key={t.id}
           onClick={() => playTrack(t, recentSongs)}
-          className="group flex h-[56px] min-w-0 justify-start gap-2.5 overflow-hidden rounded-[4px] bg-foreground/10 p-0 pr-2 text-left transition-colors hover:bg-foreground/20 lg:h-[64px] lg:gap-3"
+          className="group flex h-[42px] min-w-0 justify-start gap-2.5 overflow-hidden rounded-[4px] bg-foreground/10 p-0 pr-2 text-left transition-colors hover:bg-foreground/20 lg:h-[48px] lg:gap-3"
         >
-          <img src={t.artwork || "/placeholder.svg"} alt="" loading="lazy" className="h-full w-[56px] shrink-0 object-cover lg:w-[64px]" />
+          <img src={t.artwork || "/placeholder.svg"} alt="" loading="lazy" className="h-full w-[42px] shrink-0 object-cover lg:w-[48px]" />
           <span className="line-clamp-2 min-w-0 flex-1 whitespace-normal text-[13px] font-bold leading-tight text-foreground lg:text-sm">{t.title}</span>
           <span className="flex h-8 w-8 shrink-0 items-center justify-center mr-1 rounded-full bg-primary text-primary-foreground opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
             <Play className="ml-0.5 h-3.5 w-3.5" fill="currentColor" />
