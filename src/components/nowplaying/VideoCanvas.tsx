@@ -10,6 +10,8 @@ import { searchYouTubeVideos } from "@/services/musicApi";
 import { usePlayer } from "@/context/PlayerContext";
 
 const poolCache = new Map<string, string[]>();
+/** Videos YouTube refused to embed (error 101/150) — never picked again. */
+const failedIds = new Set<string>();
 const STATIC_RE = /\b(official audio|audio only|visuali[sz]er|lyric|lyrics|topic|full album|slowed|reverb|sped up|8d|nightcore|instrumental|karaoke|stream|cover art|static|album art|provided to youtube|art track|audio)\b/i;
 
 /** True when a search result looks like a still-image upload rather than a real video. */
@@ -53,7 +55,7 @@ async function artistPool(artist: string): Promise<string[]> {
     if (looksStatic(v)) continue;
     if (!firsts.some((f) => t.includes(f))) continue;
     const id = idOf(v);
-    if (id) ids.add(id);
+    if (id && !failedIds.has(id)) ids.add(id);
   }
   const pool = [...ids];
   if (pool.length) poolCache.set(key, pool);
@@ -62,7 +64,7 @@ async function artistPool(artist: string): Promise<string[]> {
 
 const lastPicked = new Map<string, string>();
 async function pickArtistVideo(artist: string): Promise<string> {
-  const pool = await artistPool(artist);
+  const pool = (await artistPool(artist)).filter((id) => !failedIds.has(id));
   if (!pool.length) return "";
   const key = artist.toLowerCase();
   const options = pool.length > 1 ? pool.filter((id) => id !== lastPicked.get(key)) : pool;
@@ -89,7 +91,7 @@ async function firstMatch(query: string, songWords: string[], firsts: string[]):
     if (songWords.length && !songWords.some((w) => t.includes(w))) continue;
     if (!firsts.some((f) => t.includes(f))) continue;
     const id = idOf(v);
-    if (id) return id;
+    if (id && !failedIds.has(id)) return id;
   }
   return "";
 }
@@ -103,7 +105,8 @@ async function pickVideo(title: string, artist: string): Promise<string> {
   if (!names.length) return "";
   const song = cleanTitle(title);
   const key = `${song}|${artist}`.toLowerCase();
-  if (songCache.has(key)) return songCache.get(key)!;
+  const cached = songCache.get(key);
+  if (cached && !failedIds.has(cached)) return cached;
   const firsts = names.map((n) => n.toLowerCase().split(" ")[0]);
   const words = song.toLowerCase().split(/\s+/).filter((w) => w.length > 2).slice(0, 3);
   // Step 1 (unchanged): the song's own music video.
@@ -130,7 +133,7 @@ async function pickVideo(title: string, artist: string): Promise<string> {
         if (words.length && !words.some((w) => t.includes(w))) continue;
         if (!firsts.some((f) => t.includes(f))) continue;
         const id = idOf(v);
-        if (id) { songCache.set(key, id); return id; }
+        if (id && !failedIds.has(id)) { songCache.set(key, id); return id; }
       }
     }
   }
@@ -149,8 +152,11 @@ interface Props {
   onActiveChange?: (active: boolean) => void;
 }
 
+const usePlayerPlaying = { current: false };
+
 export function VideoCanvas({ trackId, artwork, artist = "", title = "", enabled = true, className, onActiveChange }: Props) {
   const [id, setId] = useState("");
+  const [retry, setRetry] = useState(0);
 
   // Always use the artist's official music videos — never the audio stream ID,
   // which is usually a static/visualizer upload.
@@ -161,18 +167,37 @@ export function VideoCanvas({ trackId, artwork, artist = "", title = "", enabled
       pickVideo(title, artist).then((v) => { if (!cancelled) setId(v); });
     }
     return () => { cancelled = true; };
-  }, [trackId, artist, title, enabled]);
+  }, [trackId, artist, title, enabled, retry]);
 
   const active = enabled && !!id;
   // Hide the frame until YouTube's own start-up buttons have gone away.
   const [ready, setReady] = useState(false);
-  useEffect(() => { setReady(false); if (!id) return; const t = window.setTimeout(() => setReady(true), 3800); return () => window.clearTimeout(t); }, [id]);
+  useEffect(() => { setReady(false); if (!id) return; const t = window.setTimeout(() => setReady(true), 2500); return () => window.clearTimeout(t); }, [id]);
+  // Listen to the embed: if YouTube refuses to play it (blocked/removed) or it
+  // never starts, drop it and pick the next video so the canvas is never black.
+  const playingRef = useRef(false);
+  useEffect(() => {
+    if (!id) return;
+    playingRef.current = false;
+    const fail = () => { failedIds.add(id); setId(""); setRetry((r) => r + 1); };
+    const onMsg = (e: MessageEvent) => {
+      if (typeof e.origin !== "string" || !e.origin.includes("youtube")) return;
+      let d: any; try { d = typeof e.data === "string" ? JSON.parse(e.data) : e.data; } catch { return; }
+      if (d?.event === "onError") fail();
+      const state = d?.info?.playerState ?? (d?.event === "onStateChange" ? d.info : undefined);
+      if (state === 1) { playingRef.current = true; setReady(true); }
+    };
+    window.addEventListener("message", onMsg);
+    const watchdog = window.setTimeout(() => { if (!playingRef.current && usePlayerPlaying.current) fail(); }, 12000);
+    return () => { window.removeEventListener("message", onMsg); window.clearTimeout(watchdog); };
+  }, [id]);
   useEffect(() => { onActiveChange?.(active); }, [active, onActiveChange]);
 
   // Sync script: the video runs on the song's own clock — 1:1 with the audio.
   // It only plays while the song plays, and is re-aligned to the song's
   // elapsed time whenever it is ready, the song seeks, or drift builds up.
   const { isPlaying, progress, duration } = usePlayer();
+  usePlayerPlaying.current = isPlaying;
   const frameRef = useRef<HTMLIFrameElement>(null);
   const send = (func: string, args: unknown[] = []) =>
     frameRef.current?.contentWindow?.postMessage(JSON.stringify({ event: "command", func, args }), "*");
@@ -200,20 +225,28 @@ export function VideoCanvas({ trackId, artwork, artist = "", title = "", enabled
   }, [songSec, ready]);
 
   return (
-    <div aria-hidden className={cn("pointer-events-none absolute inset-0 overflow-hidden select-none", className)}>
-      {active ? (
+    <div aria-hidden className={cn("pointer-events-none absolute inset-0 overflow-hidden select-none [container-type:size]", className)}>
+      {artwork && <img src={artwork} alt="" className="absolute inset-0 h-full w-full scale-110 object-cover blur-2xl opacity-60" />}
+      {active && (
         <iframe
           ref={frameRef}
           key={id}
           title="canvas"
           tabIndex={-1}
-          src={`https://www.youtube-nocookie.com/embed/${id}?autoplay=1&mute=1&controls=0&loop=1&playlist=${id}&modestbranding=1&playsinline=1&rel=0&iv_load_policy=3&disablekb=1&fs=0&showinfo=0&cc_load_policy=0&start=${Math.floor(songSecRef.current)}&enablejsapi=1`}
-          allow="autoplay; encrypted-media"
-          className={cn("pointer-events-none absolute left-1/2 top-1/2 h-[max(140%,78vw)] w-[max(140%,250vh)] -translate-x-1/2 -translate-y-1/2 transition-opacity duration-1000", ready ? "opacity-100" : "opacity-0")}
+          src={`https://www.youtube.com/embed/${id}?autoplay=1&mute=1&controls=0&loop=1&playlist=${id}&modestbranding=1&playsinline=1&rel=0&iv_load_policy=3&disablekb=1&fs=0&cc_load_policy=0&start=${Math.max(0, Math.floor(songSecRef.current))}&enablejsapi=1&origin=${encodeURIComponent(window.location.origin)}`}
+          allow="autoplay; encrypted-media; picture-in-picture"
+          onLoad={() => {
+            // Subscribe to player events (errors / state) from the embed.
+            frameRef.current?.contentWindow?.postMessage(JSON.stringify({ event: "listening", id: 1, channel: "widget" }), "*");
+            send("addEventListener", ["onError"]);
+            send("addEventListener", ["onStateChange"]);
+            send("mute");
+            if (usePlayerPlaying.current) send("playVideo");
+          }}
+          className={cn("pointer-events-none absolute left-1/2 top-1/2 aspect-video min-h-full min-w-full -translate-x-1/2 -translate-y-1/2 scale-[1.15] transition-opacity duration-1000", ready ? "opacity-100" : "opacity-0")}
+          style={{ width: "max(100%, 177.78cqh)", height: "max(100%, 56.25cqw)" }}
         />
-      ) : artwork ? (
-        <img src={artwork} alt="" className="h-full w-full scale-110 object-cover blur-2xl opacity-60" />
-      ) : null}
+      )}
       <div className="absolute inset-0 bg-gradient-to-b from-background/30 via-transparent to-background/90" />
     </div>
   );
