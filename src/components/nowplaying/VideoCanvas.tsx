@@ -213,7 +213,7 @@ export function VideoCanvas({ trackId, artwork, artist = "", title = "", enabled
           key={id}
           title="canvas"
           tabIndex={-1}
-          src={`https://www.youtube.com/embed/${id}?autoplay=1&mute=1&controls=0&loop=1&playlist=${id}&modestbranding=1&playsinline=1&rel=0&iv_load_policy=3&disablekb=1&fs=0&cc_load_policy=0&start=${Math.max(0, Math.floor(songSecRef.current))}&enablejsapi=1&origin=${encodeURIComponent(window.location.origin)}`}
+          src={`https://www.youtube.com/embed/${id}?autoplay=1&mute=1&controls=0&loop=1&playlist=${id}&modestbranding=1&playsinline=1&rel=0&iv_load_policy=3&disablekb=1&fs=0&cc_load_policy=0&enablejsapi=1&origin=${encodeURIComponent(window.location.origin)}`}
           allow="autoplay; encrypted-media; picture-in-picture"
           onLoad={() => {
             // Subscribe to player events (errors / state) from the embed.
