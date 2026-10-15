@@ -193,36 +193,16 @@ export function VideoCanvas({ trackId, artwork, artist = "", title = "", enabled
   }, [id]);
   useEffect(() => { onActiveChange?.(active); }, [active, onActiveChange]);
 
-  // Sync script: the video runs on the song's own clock — 1:1 with the audio.
-  // It only plays while the song plays, and is re-aligned to the song's
-  // elapsed time whenever it is ready, the song seeks, or drift builds up.
-  const { isPlaying, progress, duration } = usePlayer();
+  // Simple playback: the video just loops, pausing/playing with the song.
+  const { isPlaying } = usePlayer();
   usePlayerPlaying.current = isPlaying;
   const frameRef = useRef<HTMLIFrameElement>(null);
   const send = (func: string, args: unknown[] = []) =>
     frameRef.current?.contentWindow?.postMessage(JSON.stringify({ event: "command", func, args }), "*");
-  const songSec = progress * (duration || 0);
-  const songSecRef = useRef(0);
-  songSecRef.current = songSec;
-  // When the frame becomes ready, jump to the exact song position.
-  useEffect(() => { if (ready) send("seekTo", [songSecRef.current, true]); }, [ready]);
   useEffect(() => {
     if (!ready) return;
-    if (isPlaying) { send("seekTo", [songSecRef.current, true]); send("playVideo"); }
-    else send("pauseVideo");
+    send(isPlaying ? "playVideo" : "pauseVideo");
   }, [isPlaying, ready]);
-  // Seeks / drift: re-align whenever song time jumps, plus every 10s.
-  const lastSec = useRef(0);
-  const lastSync = useRef(0);
-  useEffect(() => {
-    if (!ready) return;
-    const jumped = Math.abs(songSec - lastSec.current) > 1.5;
-    if (jumped || Math.abs(songSec - lastSync.current) > 10) {
-      send("seekTo", [songSec, true]);
-      lastSync.current = songSec;
-    }
-    lastSec.current = songSec;
-  }, [songSec, ready]);
 
   return (
     <div aria-hidden className={cn("pointer-events-none absolute inset-0 overflow-hidden select-none [container-type:size]", className)}>

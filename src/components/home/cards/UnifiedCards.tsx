@@ -7,7 +7,7 @@ import type { Track } from "@/data/mockData";
  * Responsive card width — roughly 2 cards on phones, 3 on tablets and
  * 4 on desktop, with a small peek so the row reads as scrollable.
  */
-const CARD_W = "w-[42vw] sm:w-[28vw] md:w-[22vw] lg:w-[200px] xl:w-[220px] 2xl:w-[232px] max-w-[232px]";
+const CARD_W = "w-[32vw] sm:w-[21vw] md:w-[16.5vw] lg:w-[150px] xl:w-[165px] 2xl:w-[174px] max-w-[174px]";
 /** Premium Spotify-grade artwork frame: soft graphite base, deep drop shadow. */
 const ART =
   "overflow-hidden rounded-[4px] bg-secondary shadow-card transition-all duration-300 group-hover:shadow-elevated";
