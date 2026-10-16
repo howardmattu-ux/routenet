@@ -150,8 +150,6 @@ export function GlobalAudioPlayer() {
   // Position (seconds) the iframe should resume from after a stream failover.
   const resumeAtRef = useRef(0);
   const hasEndedRef = useRef(false); // Prevent double-fire of track end
-  const trackChangedAtRef = useRef(0);
-  const handleProgressRef = useRef<(ct: number, dur: number) => void>(() => {});
 
   const crossfadeTriggeredRef = useRef(false);
   const crossfadeFadeRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
@@ -530,7 +528,25 @@ export function GlobalAudioPlayer() {
           lastTime = ct;
 
           if (dur > 0) {
-            handleProgressRef.current(ct, dur);
+            setProgress(ct, dur);
+            if (
+              isAutoMixEnabled() &&
+              dur > (xfMs() / 1000) + 1 &&
+              dur - ct <= (xfMs() / 1000) &&
+              !crossfadeTriggeredRef.current &&
+              !hasEndedRef.current
+            ) {
+              // Inline crossfade trigger (avoids stale closure on usePipedAudio)
+              if ((window as any).__djEnabled !== true && repeat !== "one") {
+                crossfadeTriggeredRef.current = true;
+                pendingFadeInRef.current = true;
+                // Move outgoing audio aside so the next track can attach
+                // without truncating the current song. The element keeps
+                // playing while fading out over the crossfade window.
+                beginPrevFadeOut();
+                setTimeout(() => { next(); }, 50);
+              }
+            }
           }
         }
       }, 250);
@@ -566,7 +582,6 @@ export function GlobalAudioPlayer() {
 
   // Reset hasEnded when track changes
   useEffect(() => {
-    trackChangedAtRef.current = Date.now();
     hasEndedRef.current = false;
     crossfadeTriggeredRef.current = false;
     if (crossfadeFadeRef.current) {
@@ -599,8 +614,19 @@ export function GlobalAudioPlayer() {
     }
     if (pendingFadeInRef.current) {
       pendingFadeInRef.current = false;
-      // Song 1 has already faded out and finished; song 2 reuses the same
-      // player and just fades up.
+      handoffRef.current = true;
+      // Dual-deck: if song 1 is on a YouTube deck, keep that deck playing
+      // as the "tail" and send song 2 to the other deck.
+      if (!usePipedAudio && showPlayer && youtubeId) {
+        const old = activeDeckRef.current;
+        const nextDeck = old === "A" ? "B" : "A";
+        const t = { id: youtubeId, deck: old };
+        tailRef.current = t;
+        setTail(t);
+        activeDeckRef.current = nextDeck;
+        setActiveDeck(nextDeck);
+        setYoutubeId(null);
+      }
       const ramp = () => {
         const audio = audioRef.current;
         const yt = !audio ? deckRefs[activeDeckRef.current].current : null;
@@ -813,42 +839,24 @@ export function GlobalAudioPlayer() {
     };
   }, [currentTrack?.id, currentTrack?.title, currentTrack?.artist, currentTrack?.youtubeId, next, stopPipedAudio, tryPlayWithPiped]);
 
-  // Changeover: song 1 stays the current song and simply fades down over
-  // its last seconds. Only when the fade is done do we move to song 2, which
-  // then loads into the same player and fades up. One song = one "current"
-  // track at a time, so nothing can be skipped or frozen by a second deck.
-  const triggerCrossfade = useCallback((remainingSec?: number) => {
+  const triggerCrossfade = useCallback(() => {
     if (crossfadeTriggeredRef.current || hasEndedRef.current) return;
     if (repeat === "one") return;
-    if ((window as any).__djEnabled === true) return; // DJ manages its own transitions
+    const djEnabled = (window as any).__djEnabled === true;
+    if (djEnabled) return; // DJ manages its own transitions
 
     crossfadeTriggeredRef.current = true;
-    const trackId = activeTrackIdRef.current;
-    const totalMs = Math.max(400, Math.min(xfMs(), ((remainingSec ?? xfMs() / 1000) - 0.5) * 1000));
-    const steps = Math.max(1, Math.floor(totalMs / CROSSFADE_FADE_INTERVAL_MS));
-    let step = 0;
-    if (crossfadeFadeRef.current) clearInterval(crossfadeFadeRef.current);
-    crossfadeFadeRef.current = setInterval(() => {
-      // Song changed meanwhile (manual skip) — stop fading.
-      if (activeTrackIdRef.current !== trackId) {
-        clearInterval(crossfadeFadeRef.current);
-        crossfadeFadeRef.current = undefined;
-        return;
-      }
-      step++;
-      const v = Math.max(0, fadeOutCurve(Math.min(1, step / steps)));
-      try {
-        if (audioRef.current) audioRef.current.volume = v;
-        else playerRef.current?.setVolume?.(v);
-      } catch {}
-      if (step >= steps) {
-        clearInterval(crossfadeFadeRef.current);
-        crossfadeFadeRef.current = undefined;
-        pendingFadeInRef.current = true; // song 2 fades up when it starts
-        handleTrackEnd();
-      }
-    }, CROSSFADE_FADE_INTERVAL_MS);
-  }, [repeat, handleTrackEnd]);
+    pendingFadeInRef.current = true;
+
+    // If using Piped audio, move the outgoing audio aside so it can keep
+    // playing while fading out — the new track will attach to audioRef.
+    if (audioRef.current && usePipedAudio) {
+      beginPrevFadeOut();
+    }
+
+    // Kick off the next track immediately so it overlaps the tail
+    setTimeout(() => { next(); }, 50);
+  }, [next, repeat, usePipedAudio, beginPrevFadeOut]);
 
   const handleProgress = useCallback(
     (currentTime: number, duration: number) => {
@@ -860,15 +868,13 @@ export function GlobalAudioPlayer() {
         duration - currentTime <= (xfMs() / 1000) &&
         !crossfadeTriggeredRef.current
       ) {
-        triggerCrossfade(duration - currentTime);
+        triggerCrossfade();
       }
     },
     [setProgress, triggerCrossfade]
   );
 
   const handleVideoEnd = useCallback(() => {
-    // Ignore a late "ended" from the previous song right after a change.
-    if (Date.now() - trackChangedAtRef.current < 3000) return;
     handleTrackEnd();
   }, [handleTrackEnd]);
 
