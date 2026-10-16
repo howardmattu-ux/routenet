@@ -377,7 +377,7 @@ export function GlobalAudioPlayer() {
           prevFadeOutRef.current = undefined;
         }
         try { outgoing.pause(); } catch {}
-        try { outgoing.src = ""; } catch {}
+        try { outgoing.removeAttribute("src"); outgoing.load(); } catch {}
         if (prevAudioRef.current === outgoing) prevAudioRef.current = null;
       }
     }, CROSSFADE_FADE_INTERVAL_MS);
@@ -651,6 +651,11 @@ export function GlobalAudioPlayer() {
             fadeInIntervalRef.current = undefined;
           }
         }, CROSSFADE_FADE_INTERVAL_MS);
+        // Safety net: never leave the new song stuck silent if the fade
+        // gets interrupted (track change, tab throttling, etc.).
+        setTimeout(() => {
+          try { setVol(1); } catch {}
+        }, fadeMs + 1500);
         return true;
       };
       // Song 2 may still be loading — song 1 keeps playing at full volume
