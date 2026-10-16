@@ -312,9 +312,10 @@ export function GlobalAudioPlayer() {
 
   const stopPipedAudio = useCallback(() => {
     if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.src = "";
-      audioRef.current = null;
+      const a = audioRef.current;
+      audioRef.current = null; // detach first so its teardown error is ignored
+      try { a.pause(); } catch {}
+      try { a.removeAttribute("src"); a.load(); } catch {}
     }
     if (pipedProgressRef.current) {
       clearInterval(pipedProgressRef.current);
@@ -475,14 +476,22 @@ export function GlobalAudioPlayer() {
         });
       }
 
-      audio.addEventListener("ended", handleTrackEnd);
+      // Only the deck that is CURRENTLY active may advance the queue or fail
+      // over. A fading-out previous deck ending/erroring must never touch the
+      // new song (that caused the "skips the next song" and freeze bugs).
+      audio.addEventListener("ended", () => {
+        if (audioRef.current !== audio) return;
+        handleTrackEnd();
+      });
 
       // If the direct stream dies part-way through (expired/geo-locked CDN
       // URL, network hiccup), don't kill playback — hand the rest of the
       // song over to the YouTube iframe at the exact same position so the
       // track always plays to the end.
       audio.addEventListener("error", () => {
-        const at = audioRef.current?.currentTime || 0;
+        if (audioRef.current !== audio) return; // stale/torn-down deck
+        if (!audio.src || audio.src === window.location.href) return; // intentional teardown
+        const at = audio.currentTime || 0;
         console.warn("[Piped Audio] Playback error — failing over to iframe at", at);
         markAsIframeOnly(videoId);
         stopPipedAudio();
