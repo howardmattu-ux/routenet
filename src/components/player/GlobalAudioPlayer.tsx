@@ -632,24 +632,12 @@ export function GlobalAudioPlayer() {
         fadeTail();
         const fadeMs = xfMs();
         const steps = Math.max(1, Math.floor(fadeMs / CROSSFADE_FADE_INTERVAL_MS));
-        const sync = getCrossfade().sync && !!audio;
-        const nudge = sync ? Math.min(0.04, 0.5 / Math.max(1, fadeMs / 1000)) : 0;
-        if (audio) {
-          try { (audio as any).preservesPitch = true; audio.playbackRate = 1 + nudge; } catch {}
-        }
-        const glideSteps = Math.floor(10000 / CROSSFADE_FADE_INTERVAL_MS);
         let step = 0;
         fadeInIntervalRef.current = setInterval(() => {
           step++;
-          try {
-            if (step <= steps) setVol(Math.min(1, fadeInCurve(step / steps)));
-            if (audio && nudge && step > steps) {
-              const g = Math.min(1, (step - steps) / glideSteps);
-              audio.playbackRate = 1 + nudge * (1 - g * g * (3 - 2 * g));
-            }
-          } catch {}
-          if (step >= steps + (nudge ? glideSteps : 0) && fadeInIntervalRef.current) {
-            try { if (audio) audio.playbackRate = 1; setVol(1); } catch {}
+          try { setVol(Math.min(1, fadeInCurve(step / steps))); } catch {}
+          if (step >= steps && fadeInIntervalRef.current) {
+            try { setVol(1); } catch {}
             clearInterval(fadeInIntervalRef.current);
             fadeInIntervalRef.current = undefined;
           }
@@ -779,13 +767,12 @@ export function GlobalAudioPlayer() {
       setIsSearching(true);
       stopPipedAudio();
 
+      // Slow songs are never skipped — just let the user know it's still loading.
       searchTimeoutRef.current = setTimeout(() => {
         if (requestToken === searchTokenRef.current) {
-          toast({ title: "Skipping song", description: `"${track.title}" took too long to load`, variant: "destructive" });
-          setIsSearching(false);
-          next();
+          toast({ title: "Still loading", description: `"${track.title}" is taking a bit longer…` });
         }
-      }, 15000);
+      }, 20000);
 
       const trySearch = async (attempt: number): Promise<string | null> => {
         try {
