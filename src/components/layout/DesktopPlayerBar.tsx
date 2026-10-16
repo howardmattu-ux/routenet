@@ -30,6 +30,7 @@ export function DesktopPlayerBar() {
   const [volume, setVolume] = useState(() => getGlobalVolume());
   const changeVol = (v: number) => { setVolume(v); setGlobalVolume(v); };
   const [showPlaylistDialog, setShowPlaylistDialog] = useState(false);
+  const [xf, setXf] = useCrossfade();
   const [downloadStatus, setDownloadStatus] = useState<"idle" | "downloading" | "done" | "failed">("idle");
 
   useEffect(() => {
