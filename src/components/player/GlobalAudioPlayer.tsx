@@ -113,7 +113,24 @@ export function GlobalAudioPlayer() {
   const [showPlayer, setShowPlayer] = useState(false);
   const [usePipedAudio, setUsePipedAudio] = useState(false);
   const [useNativeAudio, setUseNativeAudio] = useState(false);
-  const playerRef = useRef<YouTubePlayerRef>(null);
+  // Dual decks: two YouTube players so song 1 keeps playing while song 2 starts.
+  const deckARef = useRef<YouTubePlayerRef>(null);
+  const deckBRef = useRef<YouTubePlayerRef>(null);
+  const deckRefs = { A: deckARef, B: deckBRef } as const;
+  const [activeDeck, setActiveDeck] = useState<"A" | "B">("A");
+  const activeDeckRef = useRef<"A" | "B">("A");
+  const [tail, setTail] = useState<{ id: string; deck: "A" | "B" } | null>(null);
+  const tailRef = useRef<{ id: string; deck: "A" | "B" } | null>(null);
+  const tailFadeRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
+  const handoffRef = useRef(false);
+  const youtubeIdRef = useRef<string | null>(null);
+  youtubeIdRef.current = youtubeId;
+  // playerRef always points at the active deck.
+  const playerRef = useRef({
+    get current(): YouTubePlayerRef | null {
+      return (activeDeckRef.current === "A" ? deckARef : deckBRef).current;
+    },
+  }).current as React.RefObject<YouTubePlayerRef>;
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const nativeProgressRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
   const nativeEndTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -174,6 +191,30 @@ export function GlobalAudioPlayer() {
     }
   }, [currentTrack?.id, queue]);
 
+  const clearTail = useCallback(() => {
+    if (tailFadeRef.current) {
+      clearInterval(tailFadeRef.current);
+      tailFadeRef.current = undefined;
+    }
+    if (tailRef.current) {
+      tailRef.current = null;
+      setTail(null);
+    }
+  }, []);
+
+  // Fade the outgoing YouTube deck (song 1) down while song 2 fades up.
+  const fadeTail = useCallback(() => {
+    const t = tailRef.current;
+    if (!t || tailFadeRef.current) return;
+    const steps = Math.max(1, Math.floor(xfMs() / CROSSFADE_FADE_INTERVAL_MS));
+    let step = 0;
+    tailFadeRef.current = setInterval(() => {
+      step++;
+      try { deckRefs[t.deck].current?.setVolume?.(Math.max(0, fadeOutCurve(Math.min(1, step / steps)))); } catch {}
+      if (step >= steps) clearTail();
+    }, CROSSFADE_FADE_INTERVAL_MS);
+  }, [clearTail]);
+
   const stopPrevAudio = useCallback(() => {
     if (prevFadeOutRef.current) {
       clearInterval(prevFadeOutRef.current);
@@ -184,7 +225,8 @@ export function GlobalAudioPlayer() {
       try { prevAudioRef.current.src = ""; } catch {}
       prevAudioRef.current = null;
     }
-  }, []);
+    clearTail();
+  }, [clearTail]);
 
   const stopNativeAudioPlayback = useCallback(async () => {
     if (nativeProgressRef.current) {
@@ -315,6 +357,13 @@ export function GlobalAudioPlayer() {
       clearInterval(pipedProgressRef.current);
       pipedProgressRef.current = undefined;
     }
+    // The fade itself starts once song 2 is actually playing (startPrevFade),
+    // so song 1 keeps playing at full volume while song 2 loads.
+  }, [stopPrevAudio]);
+
+  const startPrevFade = useCallback(() => {
+    const outgoing = prevAudioRef.current;
+    if (!outgoing || prevFadeOutRef.current) return;
     const startVol = outgoing.volume;
     const steps = Math.max(1, Math.floor(xfMs() / CROSSFADE_FADE_INTERVAL_MS));
     let step = 0;
