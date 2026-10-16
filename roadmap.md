@@ -20,3 +20,4 @@
 - [x] Crash guard for failed lookups; YouTube artwork fallback + duplicate-artist cleanup in Search
 - [x] Unsynced lyrics scroll as one smooth sheet
 - [x] Spotify-style desktop top bar (logo, round Home, pill search) + Home pills/tiles
+- [x] Crossfade 1–15s (bottom-bar button, Settings, Equalizer) with optional tempo sync easing back over 10s
