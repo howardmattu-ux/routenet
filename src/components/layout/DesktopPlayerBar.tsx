@@ -148,7 +148,7 @@ export function DesktopPlayerBar() {
             onContextMenu={(e) => { e.preventDefault(); navigate("/equalizer"); }}
             aria-label="Crossfade"
             aria-pressed={xf.enabled}
-            title={xf.enabled ? `Crossfade ${xf.seconds}s${xf.sync ? " · tempo sync" : ""} (right-click for settings)` : "Crossfade off (right-click for settings)"}
+            title={xf.enabled ? `Crossfade ${xf.seconds}s (right-click for settings)` : "Crossfade off (right-click for settings)"}
           >
             <Blend className="h-4 w-4" />
             {xf.enabled && <span className="absolute bottom-0.5 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full bg-primary" />}
