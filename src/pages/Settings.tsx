@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { CrossfadeControls } from "@/components/player/CrossfadeControls";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import {
@@ -333,19 +334,7 @@ export default function Settings() {
                   ))}
                 </Group>
                 <Group title="Player">
-                  <Row
-                    icon={Sliders}
-                    label="Crossfade"
-                    desc={prefs.crossfade === 0 ? "Off" : `${prefs.crossfade}s between songs`}
-                  />
-                  <div className="px-4 pb-4">
-                    <Slider
-                      value={[prefs.crossfade]}
-                      max={12}
-                      step={1}
-                      onValueChange={([v]) => set("crossfade", v)}
-                    />
-                  </div>
+                  <div className="px-2 pb-3"><CrossfadeControls /></div>
                   <Row
                     icon={Music2}
                     label="Gapless playback"
