@@ -18,13 +18,6 @@ export function CrossfadeControls() {
         <div className="mb-2 flex justify-between text-xs text-muted-foreground"><span>1s</span><span>{xf.seconds}s</span><span>15s</span></div>
         <Slider value={[xf.seconds]} min={1} max={15} step={1} onValueChange={([v]) => setXf({ seconds: v })} />
       </div>
-      <div className={"flex items-center justify-between " + (xf.enabled ? "" : "pointer-events-none opacity-40")}>
-        <div>
-          <p className="text-sm font-semibold text-foreground">Tempo sync</p>
-          <p className="text-xs text-muted-foreground">Lines the next song up during the blend, then eases back to normal over 10s</p>
-        </div>
-        <Switch checked={xf.sync} onCheckedChange={(v) => setXf({ sync: v })} aria-label="Tempo sync" />
-      </div>
     </div>
   );
 }
