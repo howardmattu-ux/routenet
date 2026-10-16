@@ -222,7 +222,7 @@ export function GlobalAudioPlayer() {
     }
     if (prevAudioRef.current) {
       try { prevAudioRef.current.pause(); } catch {}
-      try { prevAudioRef.current.src = ""; } catch {}
+      try { prevAudioRef.current.removeAttribute("src"); prevAudioRef.current.load(); } catch {}
       prevAudioRef.current = null;
     }
     clearTail();
