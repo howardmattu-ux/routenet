@@ -556,45 +556,69 @@ export function GlobalAudioPlayer() {
     }
     if (pendingFadeInRef.current) {
       pendingFadeInRef.current = false;
+      handoffRef.current = true;
+      // Dual-deck: if song 1 is on a YouTube deck, keep that deck playing
+      // as the "tail" and send song 2 to the other deck.
+      if (!usePipedAudio && showPlayer && youtubeId) {
+        const old = activeDeckRef.current;
+        const nextDeck = old === "A" ? "B" : "A";
+        const t = { id: youtubeId, deck: old };
+        tailRef.current = t;
+        setTail(t);
+        activeDeckRef.current = nextDeck;
+        setActiveDeck(nextDeck);
+        setYoutubeId(null);
+      }
       const ramp = () => {
         const audio = audioRef.current;
-        if (!audio) return false;
-        audio.volume = 0;
+        const yt = !audio ? deckRefs[activeDeckRef.current].current : null;
+        if (!audio && !(yt && youtubeIdRef.current)) return false;
+        const setVol = (v: number) => {
+          if (audio) audio.volume = v;
+          else yt?.setVolume?.(v);
+        };
+        setVol(0);
+        // Song 2 is now making sound — start fading song 1 out.
+        startPrevFade();
+        fadeTail();
         const fadeMs = xfMs();
         const steps = Math.max(1, Math.floor(fadeMs / CROSSFADE_FADE_INTERVAL_MS));
-        // Tempo sync: nudge the incoming song slightly (at most ~0.5s of drift
-        // across the overlap) so both line up, then glide back to normal
-        // speed over 10s once the fade has finished.
-        const sync = getCrossfade().sync;
+        const sync = getCrossfade().sync && !!audio;
         const nudge = sync ? Math.min(0.04, 0.5 / Math.max(1, fadeMs / 1000)) : 0;
-        try { (audio as any).preservesPitch = true; audio.playbackRate = 1 + nudge; } catch {}
+        if (audio) {
+          try { (audio as any).preservesPitch = true; audio.playbackRate = 1 + nudge; } catch {}
+        }
         const glideSteps = Math.floor(10000 / CROSSFADE_FADE_INTERVAL_MS);
         let step = 0;
         fadeInIntervalRef.current = setInterval(() => {
           step++;
           try {
-            audio.volume = Math.min(1, fadeInCurve(Math.min(1, step / steps)));
-            if (nudge && step > steps) {
+            if (step <= steps) setVol(Math.min(1, fadeInCurve(step / steps)));
+            if (audio && nudge && step > steps) {
               const g = Math.min(1, (step - steps) / glideSteps);
               audio.playbackRate = 1 + nudge * (1 - g * g * (3 - 2 * g));
             }
           } catch {}
           if (step >= steps + (nudge ? glideSteps : 0) && fadeInIntervalRef.current) {
-            try { audio.playbackRate = 1; } catch {}
+            try { if (audio) audio.playbackRate = 1; setVol(1); } catch {}
             clearInterval(fadeInIntervalRef.current);
             fadeInIntervalRef.current = undefined;
           }
         }, CROSSFADE_FADE_INTERVAL_MS);
         return true;
       };
-      // Audio may not be created yet — retry briefly until it exists.
-      if (!ramp()) {
-        let tries = 0;
-        const waiter = setInterval(() => {
-          tries++;
-          if (ramp() || tries > 20) clearInterval(waiter);
-        }, 200);
-      }
+      // Song 2 may still be loading — song 1 keeps playing at full volume
+      // until it's ready, then both blend.
+      let tries = 0;
+      const waiter = setInterval(() => {
+        tries++;
+        if (ramp()) { clearInterval(waiter); return; }
+        if (tries > 60) {
+          clearInterval(waiter);
+          startPrevFade();
+          fadeTail();
+        }
+      }, 200);
     } else if (audioRef.current) {
       audioRef.current.volume = 1;
     }
@@ -608,7 +632,9 @@ export function GlobalAudioPlayer() {
     activeTrackIdRef.current = track?.id ?? null;
     // Stop the previous song right away so skips feel instant
     // (unless an automatic crossfade is handing over).
-    if (track && switched && !pendingFadeInRef.current) {
+    const handoff = pendingFadeInRef.current || handoffRef.current;
+    handoffRef.current = false;
+    if (track && switched && !handoff) {
       stopPrevAudio();
       if (audioRef.current) {
         try { audioRef.current.pause(); } catch {}
@@ -838,23 +864,36 @@ export function GlobalAudioPlayer() {
     return () => stopBackgroundKeepAlive();
   }, [isPlaying, youtubeId, usePipedAudio, useNativeAudio]);
 
-  if (usePipedAudio || !showPlayer || !youtubeId) {
-    return null;
-  }
+  const activeId = !usePipedAudio && showPlayer ? youtubeId : null;
+  const deckId = (d: "A" | "B") =>
+    d === activeDeck ? activeId : tail && tail.deck === d ? tail.id : null;
+  const idA = deckId("A");
+  const idB = deckId("B");
+
+  if (!idA && !idB) return null;
+
+  const renderDeck = (d: "A" | "B", id: string | null) => {
+    if (!id) return null;
+    const isActive = d === activeDeck;
+    return (
+      <YouTubePlayer
+        key={d}
+        ref={deckRefs[d]}
+        videoId={id}
+        startSeconds={isActive ? resumeAtRef.current : 0}
+        isPlaying={isPlaying}
+        onProgress={isActive ? handleProgress : () => {}}
+        onEnd={isActive ? handleVideoEnd : clearTail}
+        onReady={() => console.log(`[GlobalAudioPlayer] Deck ${d} ready`)}
+        onError={isActive ? handlePlayerError : clearTail}
+      />
+    );
+  };
 
   return (
     <div className="pointer-events-none fixed left-0 top-0 h-px w-px overflow-hidden opacity-0" aria-hidden="true">
-      <YouTubePlayer
-        ref={playerRef}
-        videoId={youtubeId}
-        startSeconds={resumeAtRef.current}
-        isPlaying={isPlaying}
-        onProgress={handleProgress}
-
-        onEnd={handleVideoEnd}
-        onReady={() => console.log("[GlobalAudioPlayer] YouTube player ready")}
-        onError={handlePlayerError}
-      />
+      {renderDeck("A", idA)}
+      {renderDeck("B", idB)}
     </div>
   );
 }
