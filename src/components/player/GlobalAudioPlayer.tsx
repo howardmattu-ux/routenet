@@ -1,4 +1,5 @@
 import { useEffect, useRef, useCallback, useState } from "react";
+import { getCrossfade } from "@/lib/crossfadePrefs";
 import { usePlayer } from "@/context/PlayerContext";
 import { YouTubePlayer, YouTubePlayerRef, preloadYouTubeAPI } from "./YouTubePlayer";
 import { searchYouTubeForTrack } from "@/hooks/useYouTubePlayback";
@@ -26,15 +27,12 @@ const youtubeIdCache = new Map<string, string>();
 // so two songs literally play simultaneously during the handover.
 // Only active when AutoMix is explicitly enabled — otherwise tracks play
 // in full with a hard cut between them (no fade, no truncation).
-const CROSSFADE_DURATION_MS = 12000;
-const CROSSFADE_FADE_INTERVAL_MS = 200;
-const FADE_IN_DURATION_MS = 12000;
-function isAutoMixEnabled(): boolean {
-  try {
-    // Default OFF. Only enabled when explicitly set to "true".
-    return localStorage.getItem("tunestream_automix_enabled") === "true";
-  } catch { return false; }
-}
+const CROSSFADE_FADE_INTERVAL_MS = 100;
+function xfMs() { return getCrossfade().seconds * 1000; }
+function isAutoMixEnabled(): boolean { return getCrossfade().enabled; }
+// Equal-power curves so the overlap sounds smooth (no volume dip mid-fade).
+const fadeOutCurve = (t: number) => Math.cos(t * Math.PI / 2);
+const fadeInCurve = (t: number) => Math.sin(t * Math.PI / 2);
 
 function getCacheKey(title: string, artist: string): string {
   return `${title.toLowerCase().trim()}|${artist.toLowerCase().trim()}`;
@@ -318,11 +316,11 @@ export function GlobalAudioPlayer() {
       pipedProgressRef.current = undefined;
     }
     const startVol = outgoing.volume;
-    const steps = Math.max(1, Math.floor(CROSSFADE_DURATION_MS / CROSSFADE_FADE_INTERVAL_MS));
+    const steps = Math.max(1, Math.floor(xfMs() / CROSSFADE_FADE_INTERVAL_MS));
     let step = 0;
     prevFadeOutRef.current = setInterval(() => {
       step++;
-      try { outgoing.volume = Math.max(0, startVol * (1 - step / steps)); } catch {}
+      try { outgoing.volume = Math.max(0, startVol * fadeOutCurve(Math.min(1, step / steps))); } catch {}
       if (step >= steps) {
         if (prevFadeOutRef.current) {
           clearInterval(prevFadeOutRef.current);
@@ -475,8 +473,8 @@ export function GlobalAudioPlayer() {
             setProgress(ct, dur);
             if (
               isAutoMixEnabled() &&
-              dur > CROSSFADE_DURATION_MS / 1000 + 1 &&
-              dur - ct <= CROSSFADE_DURATION_MS / 1000 &&
+              dur > (xfMs() / 1000) + 1 &&
+              dur - ct <= (xfMs() / 1000) &&
               !crossfadeTriggeredRef.current &&
               !hasEndedRef.current
             ) {
@@ -486,7 +484,7 @@ export function GlobalAudioPlayer() {
                 pendingFadeInRef.current = true;
                 // Move outgoing audio aside so the next track can attach
                 // without truncating the current song. The element keeps
-                // playing while fading out over CROSSFADE_DURATION_MS.
+                // playing while fading out over the crossfade window.
                 beginPrevFadeOut();
                 setTimeout(() => { next(); }, 50);
               }
@@ -562,12 +560,27 @@ export function GlobalAudioPlayer() {
         const audio = audioRef.current;
         if (!audio) return false;
         audio.volume = 0;
-        const steps = Math.max(1, Math.floor(FADE_IN_DURATION_MS / CROSSFADE_FADE_INTERVAL_MS));
+        const fadeMs = xfMs();
+        const steps = Math.max(1, Math.floor(fadeMs / CROSSFADE_FADE_INTERVAL_MS));
+        // Tempo sync: nudge the incoming song slightly (at most ~0.5s of drift
+        // across the overlap) so both line up, then glide back to normal
+        // speed over 10s once the fade has finished.
+        const sync = getCrossfade().sync;
+        const nudge = sync ? Math.min(0.04, 0.5 / Math.max(1, fadeMs / 1000)) : 0;
+        try { (audio as any).preservesPitch = true; audio.playbackRate = 1 + nudge; } catch {}
+        const glideSteps = Math.floor(10000 / CROSSFADE_FADE_INTERVAL_MS);
         let step = 0;
         fadeInIntervalRef.current = setInterval(() => {
           step++;
-          try { audio.volume = Math.min(1, step / steps); } catch {}
-          if (step >= steps && fadeInIntervalRef.current) {
+          try {
+            audio.volume = Math.min(1, fadeInCurve(Math.min(1, step / steps)));
+            if (nudge && step > steps) {
+              const g = Math.min(1, (step - steps) / glideSteps);
+              audio.playbackRate = 1 + nudge * (1 - g * g * (3 - 2 * g));
+            }
+          } catch {}
+          if (step >= steps + (nudge ? glideSteps : 0) && fadeInIntervalRef.current) {
+            try { audio.playbackRate = 1; } catch {}
             clearInterval(fadeInIntervalRef.current);
             fadeInIntervalRef.current = undefined;
           }
@@ -774,9 +787,9 @@ export function GlobalAudioPlayer() {
       setProgress(currentTime, duration);
       if (
         isAutoMixEnabled() &&
-        duration > CROSSFADE_DURATION_MS / 1000 + 1 &&
+        duration > (xfMs() / 1000) + 1 &&
         currentTime > 0 &&
-        duration - currentTime <= CROSSFADE_DURATION_MS / 1000 &&
+        duration - currentTime <= (xfMs() / 1000) &&
         !crossfadeTriggeredRef.current
       ) {
         triggerCrossfade();
